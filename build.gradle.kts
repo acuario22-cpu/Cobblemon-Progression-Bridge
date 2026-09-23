@@ -23,7 +23,7 @@ repositories {
 dependencies {
     minecraft("net.minecraft:minecraft:${property("minecraft_version")}")
     mappings(loom.officialMojangMappings())
-    forge("net.minecraftforge:forge:${property("minecraft_version")}-${property("forge_version")}")
+    add("forge", "net.minecraftforge:forge:${property("minecraft_version")}-${property("forge_version")}")
     modImplementation("com.cobblemon:forge:${property("cobblemon_version")}")
     implementation("thedarkcolour:kotlinforforge:4.12.0")
 }
