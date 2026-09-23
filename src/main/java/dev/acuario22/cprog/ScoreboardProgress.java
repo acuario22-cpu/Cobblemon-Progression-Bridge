@@ -3,8 +3,8 @@ package dev.acuario22.cprog;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.Objective;
-import net.minecraft.world.scores.ObjectiveCriteria;
 import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import java.util.List;
 
 public final class ScoreboardProgress {
