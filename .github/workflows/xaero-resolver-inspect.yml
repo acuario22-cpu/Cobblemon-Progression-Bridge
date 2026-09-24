@@ -29,9 +29,9 @@ jobs:
           import json, urllib.request
           u="https://api.modrinth.com/v2/project/1bokaNcj/version"
           data=json.load(urllib.request.urlopen(u))
-          wanted=[v for v in data if v.get("version_number")=="26.4.2" and "1.20.1" in v.get("game_versions",[]) and v.get("loaders")==["forge"]]
+          wanted=[v for v in data if "26.4.2" in v.get("version_number","") and "1.20.1" in v.get("game_versions",[]) and v.get("loaders")==["forge"]]
           if not wanted:
-              wanted=[v for v in data if v.get("version_number")=="26.4.2" and "forge" in v.get("loaders",[]) and "1.20.1" in v.get("game_versions",[])]
+              wanted=[v for v in data if "26.4.2" in v.get("version_number","") and "forge" in v.get("loaders",[]) and "1.20.1" in v.get("game_versions",[])]
           v=wanted[0]
           f=next(x for x in v["files"] if x.get("primary",False))
           print("XAERO_URL="+f["url"])
