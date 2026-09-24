@@ -1,0 +1,11 @@
+Pokemon Minimap Icons HD - global repair
+Source variants: 13901
+Final variants: 14042
+Canonical species detected: 1160
+Regular base fallbacks added: 71
+Shiny base fallbacks added: 69
+Default unknown-species fallback added: True
+Missing sprite references after repair: 0
+Sawsbuck mappings after repair: 18
+Variant builder: dev.cobblemonbridge.client.XaeroPokemonVariantResolver.appendVariantId
+Output size: 8925304 bytes

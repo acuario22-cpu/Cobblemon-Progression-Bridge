@@ -1,0 +1,3 @@
+e2b26fed7af657443271b436f210e98ccf6d9c9b375cd8430662435fcf21029a  dist/Cobblemon-Progression-Bridge-1.20.1-1.0.1.jar
+c4e2f536c5dc4ea1fb4512807eeaa254821a0c622778599632013ed91e663fba  dist/Pokemon-Minimap-Icons-HD-Complete-Fixed-report.txt
+22bf56b50421d53f3a731594329f3bb1b2ed2c5a178ba1138721e529393d95ac  dist/Pokemon-Minimap-Icons-HD-Complete-Fixed.zip
