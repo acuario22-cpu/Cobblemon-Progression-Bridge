@@ -37,6 +37,14 @@ jobs:
           print("XAERO_URL="+f["url"])
           urllib.request.urlretrieve(f["url"],"input/xaerominimap-forge-1.20.1-26.4.2.jar")
           PY
+      - name: Decompile resolver source
+        run: |
+          curl -L --fail -o /tmp/cfr.jar https://www.benf.org/other/cfr/cfr-0.152.jar
+          mkdir -p decompiled
+          java -jar /tmp/cfr.jar input/Legendary-Journeys.jar --outputdir decompiled --silent true
+          echo "=== DECOMPILED RESOLVER ==="
+          cat decompiled/com/aqu/legendaryjourneys/client/XaeroGenerationsVariantResolver.java || true
+
       - name: Show resolver bytecode
         run: |
           echo "=== JAR CONTENT ==="
