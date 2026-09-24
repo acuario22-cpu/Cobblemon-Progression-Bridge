@@ -16,20 +16,16 @@ import java.util.function.Supplier;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-/**
- * Config sync packet with a versioned, compressed binary payload.
- *
- * Vanilla FriendlyByteBuf#writeUtf(String) defaults to 32767 characters.
- * Large pokemonRideConfig.json files can exceed that even though the packet
- * itself would otherwise be small.  This packet serializes JSON as UTF-8,
- * compresses it with GZIP, and writes raw bytes with explicit bounded lengths.
- */
 public class ConfigPacket {
     private static final Gson GSON = new Gson();
 
     private static final int FORMAT_VERSION = 2;
     private static final int MAX_UNCOMPRESSED_BYTES = 8 * 1024 * 1024;
     private static final int MAX_COMPRESSED_BYTES = 2 * 1024 * 1024;
+
+    private static final Object CACHE_LOCK = new Object();
+    private static PokemonJsonObject cachedObject;
+    private static EncodedConfig cachedEncoded;
 
     private final PokemonJsonObject jsonObject;
 
@@ -56,8 +52,7 @@ public class ConfigPacket {
         buffer.readBytes(compressed);
 
         byte[] raw = decompress(compressed, expectedLength);
-        String json = new String(raw, StandardCharsets.UTF_8);
-        this.jsonObject = GSON.fromJson(json, PokemonJsonObject.class);
+        this.jsonObject = GSON.fromJson(new String(raw, StandardCharsets.UTF_8), PokemonJsonObject.class);
 
         if (this.jsonObject == null) {
             throw new IllegalArgumentException("CobblemonRider config decoded to null");
@@ -65,24 +60,12 @@ public class ConfigPacket {
     }
 
     public void encodeBuffer(FriendlyByteBuf buffer) {
-        byte[] raw = GSON.toJson(this.jsonObject).getBytes(StandardCharsets.UTF_8);
-        if (raw.length > MAX_UNCOMPRESSED_BYTES) {
-            throw new IllegalArgumentException(
-                    "CobblemonRider config is too large: " + raw.length
-                            + " bytes (limit " + MAX_UNCOMPRESSED_BYTES + ")");
-        }
-
-        byte[] compressed = compress(raw);
-        if (compressed.length > MAX_COMPRESSED_BYTES) {
-            throw new IllegalArgumentException(
-                    "Compressed CobblemonRider config is too large: " + compressed.length
-                            + " bytes (limit " + MAX_COMPRESSED_BYTES + ")");
-        }
+        EncodedConfig encoded = getOrEncode(this.jsonObject);
 
         buffer.writeVarInt(FORMAT_VERSION);
-        buffer.writeVarInt(raw.length);
-        buffer.writeVarInt(compressed.length);
-        buffer.writeBytes(compressed);
+        buffer.writeVarInt(encoded.rawLength);
+        buffer.writeVarInt(encoded.compressed.length);
+        buffer.writeBytes(encoded.compressed);
     }
 
     public static void handler(ConfigPacket msg, Supplier<NetworkEvent.Context> ctx) {
@@ -92,6 +75,32 @@ public class ConfigPacket {
                     () -> () -> ClientHandler.saveConfigObject(msg.jsonObject)
             );
         });
+    }
+
+    private static EncodedConfig getOrEncode(PokemonJsonObject config) {
+        synchronized (CACHE_LOCK) {
+            if (cachedObject == config && cachedEncoded != null) {
+                return cachedEncoded;
+            }
+
+            byte[] raw = GSON.toJson(config).getBytes(StandardCharsets.UTF_8);
+            if (raw.length > MAX_UNCOMPRESSED_BYTES) {
+                throw new IllegalArgumentException(
+                        "CobblemonRider config is too large: " + raw.length
+                                + " bytes (limit " + MAX_UNCOMPRESSED_BYTES + ")");
+            }
+
+            byte[] compressed = compress(raw);
+            if (compressed.length > MAX_COMPRESSED_BYTES) {
+                throw new IllegalArgumentException(
+                        "Compressed CobblemonRider config is too large: " + compressed.length
+                                + " bytes (limit " + MAX_COMPRESSED_BYTES + ")");
+            }
+
+            cachedObject = config;
+            cachedEncoded = new EncodedConfig(raw.length, compressed);
+            return cachedEncoded;
+        }
     }
 
     private static int readBoundedLength(int value, int max, String label) {
@@ -120,18 +129,18 @@ public class ConfigPacket {
                     new ByteArrayOutputStream(Math.max(512, Math.min(expectedLength, 64 * 1024)));
 
             try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(compressed))) {
-                byte[] buffer = new byte[8192];
+                byte[] work = new byte[8192];
                 int total = 0;
                 int read;
 
-                while ((read = gzip.read(buffer)) != -1) {
+                while ((read = gzip.read(work)) != -1) {
                     total += read;
                     if (total > MAX_UNCOMPRESSED_BYTES) {
                         throw new IllegalArgumentException(
                                 "Decompressed CobblemonRider config exceeds "
                                         + MAX_UNCOMPRESSED_BYTES + " bytes");
                     }
-                    output.write(buffer, 0, read);
+                    output.write(work, 0, read);
                 }
             }
 
@@ -144,6 +153,16 @@ public class ConfigPacket {
             return raw;
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to decompress CobblemonRider config", e);
+        }
+    }
+
+    private static final class EncodedConfig {
+        private final int rawLength;
+        private final byte[] compressed;
+
+        private EncodedConfig(int rawLength, byte[] compressed) {
+            this.rawLength = rawLength;
+            this.compressed = compressed;
         }
     }
 }

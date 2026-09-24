@@ -1,10 +1,13 @@
-# CobblemonRider HD Optimized V4
+# CobblemonRider HD Optimized V5
 
-Compatibility-first replacement for the user's working GMAX/Mega Fix V2.
+Safe optimization over V4.
 
-- Restores the exact MCUtil lookup behavior from V2/upstream.
-- Restores per-call form resolution behavior from V2.
-- Keeps compressed GZIP config networking, removing the 32,767 character limitation.
-- Keeps network protocol isolation so old/new client-server combinations cannot silently mix.
-- Keeps explicit Mega/GMAX/Dynamax fallback and adds Primal fallback.
-- Same modId: cobblemonrider. Replace V2/V3; never install them together.
+- Preserves V4/V2 lookup semantics and right-click mount behavior.
+- Adds a per-Pokemon resolved-config cache keyed by config identity + species + form.
+- Caches null results too, avoiding repeated scans for unsupported forms.
+- Automatically invalidates when species/form changes or a new config object is received.
+- Resets max-passenger cache after a form/config transition.
+- Keeps GZIP large-config sync and adds server-side encoded-payload reuse for multiple joins.
+- Adds passenger-offset bounds checks to avoid malformed offset lists crashing rider positioning.
+- Same network packet format/protocol as V4.
+- Same modId: cobblemonrider.
