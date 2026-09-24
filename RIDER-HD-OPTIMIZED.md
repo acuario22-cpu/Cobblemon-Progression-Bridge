@@ -1,13 +1,13 @@
-# CobblemonRider HD Optimized V5
+# CobblemonRider HD Optimized V6
 
-Safe optimization over V4.
+Safe gameplay fixes over V5.
 
-- Preserves V4/V2 lookup semantics and right-click mount behavior.
-- Adds a per-Pokemon resolved-config cache keyed by config identity + species + form.
-- Caches null results too, avoiding repeated scans for unsupported forms.
-- Automatically invalidates when species/form changes or a new config object is received.
-- Resets max-passenger cache after a form/config transition.
-- Keeps GZIP large-config sync and adds server-side encoded-payload reuse for multiple joins.
-- Adds passenger-offset bounds checks to avoid malformed offset lists crashing rider positioning.
-- Same network packet format/protocol as V4.
-- Same modId: cobblemonrider.
+- Keeps V5 right-click behavior and per-entity form cache.
+- Hybrid SWIM+FLY controllers no longer fight each other in water.
+- Adds an air-control fallback for flying mounts whose horizontal motion stalls (notably aquatic flyers such as Kyogre).
+- Enlarges interaction pick radius for rideable Pokemon, with extra reach for large HD aquatic/legendary models.
+- Adds safe aerial dismount protection until the player reaches ground/water/lava or 30 seconds elapse.
+- Protection is granted from Player.removeVehicle so it also covers the K dismount path.
+- Optimizes swimming surface lookup by querying Heightmap only while descending.
+- Keeps GZIP config sync, large-config support, form fallback and passenger bounds protections.
+- Same modId: cobblemonrider. Replace V5; do not install both.
