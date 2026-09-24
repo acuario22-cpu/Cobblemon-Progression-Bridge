@@ -1,0 +1,57 @@
+name: Build CobblemonRider HD Optimized
+on:
+  push:
+    branches: [ "cobblemonrider-hd-optimized-v3" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout patch workspace
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Clone upstream CobblemonRider 1.20.1 Forge source
+        run: |
+          git clone --depth 1 --branch Forge_1.5 https://github.com/Zanckor/CobblemonRider.git rider-src
+
+      - name: Apply HD optimized compatibility patch
+        run: |
+          cp rider-patches/ConfigPacket.java rider-src/src/main/java/dev/zanckor/cobblemonrider/network/packet/ConfigPacket.java
+          cp rider-patches/NetworkHandler.java rider-src/src/main/java/dev/zanckor/cobblemonrider/network/NetworkHandler.java
+          cp rider-patches/ClientHandler.java rider-src/src/main/java/dev/zanckor/cobblemonrider/network/ClientHandler.java
+          cp rider-patches/MCUtil.java rider-src/src/main/java/dev/zanckor/cobblemonrider/MCUtil.java
+          cp rider-patches/FormRideCompat.java rider-src/src/main/java/dev/zanckor/cobblemonrider/FormRideCompat.java
+          python rider-patches/patch_source.py rider-src
+
+      - name: Build replacement JAR
+        working-directory: rider-src
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Verify built JAR
+        working-directory: rider-src
+        run: |
+          JAR="$(find build/libs -maxdepth 1 -name 'cobblemonrider-1.2.4-HD-Optimized-V3.jar' -print -quit)"
+          test -n "$JAR"
+          jar tf "$JAR" | grep -q 'dev/zanckor/cobblemonrider/FormRideCompat.class'
+          jar tf "$JAR" | grep -q 'dev/zanckor/cobblemonrider/network/packet/ConfigPacket.class'
+          echo "Built: $JAR"
+          sha256sum "$JAR"
+
+      - name: Upload optimized replacement
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobblemonrider-1.2.4-HD-Optimized-V3
+          path: rider-src/build/libs/cobblemonrider-1.2.4-HD-Optimized-V3.jar
+          if-no-files-found: error
