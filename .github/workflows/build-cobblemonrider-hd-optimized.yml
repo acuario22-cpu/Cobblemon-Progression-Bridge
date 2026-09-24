@@ -1,4 +1,5 @@
 name: Build CobblemonRider HD Optimized
+
 on:
   push:
     branches: [ "cobblemonrider-hd-optimized-v3" ]
@@ -34,7 +35,10 @@ jobs:
           cp rider-patches/NetworkHandler.java rider-src/src/main/java/dev/zanckor/cobblemonrider/network/NetworkHandler.java
           cp rider-patches/ClientHandler.java rider-src/src/main/java/dev/zanckor/cobblemonrider/network/ClientHandler.java
           cp rider-patches/MCUtil.java rider-src/src/main/java/dev/zanckor/cobblemonrider/MCUtil.java
-          cp rider-patches/FormRideCompat.java rider-src/src/main/java/dev/zanckor/cobblemonrider/FormRideCompat.java\n          cp rider-patches/MountSafety.java rider-src/src/main/java/dev/zanckor/cobblemonrider/MountSafety.java\n          cp rider-patches/PlayerMixin.java rider-src/src/main/java/dev/zanckor/cobblemonrider/mixin/PlayerMixin.java\n          cp rider-patches/ServerPlayerEvent.java rider-src/src/main/java/dev/zanckor/cobblemonrider/event/ServerPlayerEvent.java
+          cp rider-patches/FormRideCompat.java rider-src/src/main/java/dev/zanckor/cobblemonrider/FormRideCompat.java
+          cp rider-patches/MountSafety.java rider-src/src/main/java/dev/zanckor/cobblemonrider/MountSafety.java
+          cp rider-patches/PlayerMixin.java rider-src/src/main/java/dev/zanckor/cobblemonrider/mixin/PlayerMixin.java
+          cp rider-patches/ServerPlayerEvent.java rider-src/src/main/java/dev/zanckor/cobblemonrider/event/ServerPlayerEvent.java
           python rider-patches/patch_source.py rider-src
 
       - name: Build replacement JAR
@@ -47,9 +51,10 @@ jobs:
           JAR="$(find build/libs -maxdepth 1 -name 'cobblemonrider-1.2.4-HD-Optimized-V6.jar' -print -quit)"
           test -n "$JAR"
           jar tf "$JAR" | grep -q 'dev/zanckor/cobblemonrider/FormRideCompat.class'
+          jar tf "$JAR" | grep -q 'dev/zanckor/cobblemonrider/MountSafety.class'
           ! javap -classpath "$JAR" -c -p dev.zanckor.cobblemonrider.network.packet.ConfigPacket | grep -q 'writeUtf'
-          javap -classpath "$JAR" -c -p dev.zanckor.cobblemonrider.mixin.PokemonMixin | grep -q 'FormRideCompat.resolve'
-          javap -classpath "$JAR" -c -p dev.zanckor.cobblemonrider.mixin.PokemonMixin | grep -q 'cachedConfigSource'
+          javap -classpath "$JAR" -c -p dev.zanckor.cobblemonrider.mixin.PokemonMixin | grep -q 'airControlAssist'
+          javap -classpath "$JAR" -c -p dev.zanckor.cobblemonrider.mixin.PlayerMixin | grep -q 'MountSafety.prepare'
           echo "Built: $JAR"
           sha256sum "$JAR"
 
@@ -57,5 +62,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cobblemonrider-1.2.4-HD-Optimized-V6
-          path: rider-src/build/libs/cobblemonrider-1.2.4-HD-Optimized-V5.jar
+          path: rider-src/build/libs/cobblemonrider-1.2.4-HD-Optimized-V6.jar
           if-no-files-found: error
