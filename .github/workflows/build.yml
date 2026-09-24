@@ -1,7 +1,7 @@
-name: Build Forge 1.20.1 mod
+name: Build Cobblemon TAN Realism
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "tan-realistic-pokemon-temperature" ]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,10 +21,10 @@ jobs:
           gradle-version: "8.1.1"
       - name: Build
         run: gradle build --stacktrace
-      - name: Upload JAR
+      - name: Upload release JAR
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Cobblemon-Progression-Bridge-1.20.1
-          path: build/libs/*.jar
+          name: Cobblemon-TAN-Realism-1.20.1-1.0.0
+          path: build/libs/Cobblemon-TAN-Realism-1.20.1-1.0.0.jar
           if-no-files-found: error

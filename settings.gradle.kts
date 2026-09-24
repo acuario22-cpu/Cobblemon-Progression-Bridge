@@ -6,4 +6,4 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-rootProject.name = "Cobblemon-Progression-Bridge"
+rootProject.name = "Cobblemon-TAN-Realism"

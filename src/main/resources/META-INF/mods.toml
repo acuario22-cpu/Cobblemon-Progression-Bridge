@@ -1,27 +1,45 @@
 modLoader="javafml"
 loaderVersion="[47,)"
 license="MIT"
+
 [[mods]]
-modId="cobblemon_progression_bridge"
+modId="cobblemon_tan_realism"
 version="${version}"
-displayName="Cobblemon Progression Bridge"
-authors="Luis / ChatGPT"
-description='''Bridge de progresión para Cobblemon 1.5.2 en Forge 1.20.1.'''
-[[dependencies.cobblemon_progression_bridge]]
+displayName="Cobblemon TAN Realism"
+authors="Luis"
+description='''Realistic Pokemon temperature integration for Cobblemon + Tough As Nails. Adds level- and distance-based thermal falloff and a mild Overworld preset.'''
+
+[[dependencies.cobblemon_tan_realism]]
 modId="forge"
 mandatory=true
 versionRange="[47.4.22,)"
 ordering="NONE"
 side="BOTH"
-[[dependencies.cobblemon_progression_bridge]]
+
+[[dependencies.cobblemon_tan_realism]]
 modId="minecraft"
 mandatory=true
 versionRange="[1.20.1,1.20.2)"
 ordering="NONE"
 side="BOTH"
-[[dependencies.cobblemon_progression_bridge]]
+
+[[dependencies.cobblemon_tan_realism]]
 modId="cobblemon"
 mandatory=true
 versionRange="[1.5.2,1.6)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.cobblemon_tan_realism]]
+modId="toughasnails"
+mandatory=true
+versionRange="[9.2.0.171,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.cobblemon_tan_realism]]
+modId="cobblemonintegrations"
+mandatory=false
+versionRange="[1.0.7,)"
 ordering="AFTER"
 side="BOTH"

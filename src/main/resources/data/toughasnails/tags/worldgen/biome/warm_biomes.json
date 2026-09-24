@@ -1,0 +1,20 @@
+{
+  "replace": true,
+  "values": [
+    "minecraft:soul_sand_valley",
+    "minecraft:desert",
+    "minecraft:badlands",
+    "minecraft:wooded_badlands",
+    "minecraft:eroded_badlands",
+    "minecraft:lush_caves",
+    "minecraft:mangrove_swamp",
+    "minecraft:jungle",
+    "minecraft:sparse_jungle",
+    "minecraft:bamboo_jungle",
+    "minecraft:savanna",
+    "minecraft:savanna_plateau",
+    "minecraft:windswept_savanna",
+    "minecraft:warm_ocean",
+    "minecraft:mushroom_fields"
+  ]
+}
