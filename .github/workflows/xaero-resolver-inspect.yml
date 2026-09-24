@@ -1,0 +1,54 @@
+name: Xaero Resolver Inspect
+
+on:
+  push:
+    branches:
+      - xaero-icon-repair
+    paths:
+      - ".github/workflows/xaero-resolver-inspect.yml"
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade gdown
+      - name: Download current resolver mod and icon pack
+        run: |
+          mkdir -p input
+          gdown 1PvpxJbW9yipjD7stk5CbpvKx39Q9KFYe -O input/Legendary-Journeys.jar
+          gdown 1jtJwfz8Bs4MUn0P8jW6Gvm3VueCtyQXK -O input/Pokemon-Minimap-Icons-HD-Complete.zip
+      - name: Download exact Xaero 26.4.2
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          u="https://api.modrinth.com/v2/project/1bokaNcj/version"
+          data=json.load(urllib.request.urlopen(u))
+          wanted=[v for v in data if v.get("version_number")=="26.4.2" and "1.20.1" in v.get("game_versions",[]) and v.get("loaders")==["forge"]]
+          if not wanted:
+              wanted=[v for v in data if v.get("version_number")=="26.4.2" and "forge" in v.get("loaders",[]) and "1.20.1" in v.get("game_versions",[])]
+          v=wanted[0]
+          f=next(x for x in v["files"] if x.get("primary",False))
+          print("XAERO_URL="+f["url"])
+          urllib.request.urlretrieve(f["url"],"input/xaerominimap-forge-1.20.1-26.4.2.jar")
+          PY
+      - name: Show resolver bytecode
+        run: |
+          echo "=== JAR CONTENT ==="
+          jar tf input/Legendary-Journeys.jar
+          echo "=== RESOLVER JAVAP ==="
+          javap -classpath input/Legendary-Journeys.jar -c -p -s com.aqu.legendaryjourneys.client.XaeroGenerationsVariantResolver || true
+          echo "=== RESOLVER STRINGS ==="
+          unzip -p input/Legendary-Journeys.jar com/aqu/legendaryjourneys/client/XaeroGenerationsVariantResolver.class | strings | head -300 || true
+      - name: Show Xaero example definition
+        run: |
+          echo "=== XAERO EXAMPLE ==="
+          unzip -p input/xaerominimap-forge-1.20.1-26.4.2.jar assets/xaerominimap/entity/icon/definition/example_mod/example_entity.json || true
+          echo
+          echo "=== VARIANT BUILDER REFERENCES ==="
+          unzip -l input/xaerominimap-forge-1.20.1-26.4.2.jar | grep -Ei 'variant|entity/icon' | head -200 || true
