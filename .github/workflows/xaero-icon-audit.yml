@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/xaero-icon-audit.yml"
       - "tools/diagnose_xaero_icons.py"
+      - "tools/inspect_icon_pack.py"
   workflow_dispatch:
 
 jobs:
@@ -41,6 +42,9 @@ jobs:
           gdown 1Q5Filuxo_UTmizEa1yZEEnIMhPwQOzy8 -O "input/Generation 9.zip"
           gdown 1jtJwfz8Bs4MUn0P8jW6Gvm3VueCtyQXK -O "input/Pokemon-Minimap-Icons-HD-Complete.zip"
           ls -lh input
+
+      - name: Focused icon inspection
+        run: python tools/inspect_icon_pack.py
 
       - name: Audit
         run: python tools/diagnose_xaero_icons.py --input input --output out
