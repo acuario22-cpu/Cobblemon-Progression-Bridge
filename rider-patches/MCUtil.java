@@ -7,18 +7,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Locale;
 import java.util.Optional;
 
 public class MCUtil {
-    /**
-     * O(1) lookup table rebuilt only when the active PokemonJsonObject instance changes.
-     * Stock 1.2.4 scans every configured Pokemon on first lookup of each species/form.
-     */
-    private static final HashBasedTable<String, String, PokemonJsonObject.PokemonConfigData> cachedConfig =
-            HashBasedTable.create();
-
-    private static PokemonJsonObject cachedConfigSource;
+    private static HashBasedTable<String, String, PokemonJsonObject.PokemonConfigData> cachedConfig = HashBasedTable.create();
 
     public static Entity getEntityLookinAt(Entity rayTraceEntity, double distance) {
         float playerRotX = rayTraceEntity.getXRot();
@@ -65,63 +57,29 @@ public class MCUtil {
         return entity;
     }
 
-    public static synchronized PokemonJsonObject.PokemonConfigData getPassengerObject(
-            String pokemonType,
-            String formName
-    ) {
+    public static PokemonJsonObject.PokemonConfigData getPassengerObject(String pokemonType, String formName) {
         PokemonJsonObject pokemonJsonObject = CobblemonRider.pokemonJsonObject;
-        if (pokemonJsonObject == null || pokemonType == null) {
-            return null;
-        }
 
-        ensureCache(pokemonJsonObject);
+        if (cachedConfig.contains(pokemonType, formName)) {
+            return cachedConfig.get(pokemonType, formName);
+        } else if (pokemonJsonObject != null) {
+            for (String translationKey : pokemonJsonObject.getPokemonIDs()) {
+                PokemonJsonObject.PokemonConfigData pokemonConfigData = pokemonJsonObject.getPokemonData(translationKey);
 
-        String pokemonKey = normalize(pokemonType);
-        String formKey = normalizeForm(formName);
-        return cachedConfig.get(pokemonKey, formKey);
-    }
+                if (pokemonConfigData != null) {
+                    formName = formName.equalsIgnoreCase("normal") || formName.equalsIgnoreCase("base") ? "none" : formName;
+                    boolean isSameForm = formName.equalsIgnoreCase(pokemonConfigData.getFormName());
+                    boolean isSameType = pokemonType.equalsIgnoreCase(translationKey);
 
-    public static synchronized void clearCachedConfig() {
-        cachedConfig.clear();
-        cachedConfigSource = null;
-    }
-
-    private static void ensureCache(PokemonJsonObject pokemonJsonObject) {
-        if (cachedConfigSource == pokemonJsonObject) {
-            return;
-        }
-
-        cachedConfig.clear();
-
-        for (String translationKey : pokemonJsonObject.getPokemonIDs()) {
-            PokemonJsonObject.PokemonConfigData data = pokemonJsonObject.getPokemonData(translationKey);
-            if (data == null) {
-                continue;
+                    if (isSameType && isSameForm) {
+                        cachedConfig.put(pokemonType, formName, pokemonConfigData);
+                        return pokemonConfigData;
+                    }
+                }
             }
-
-            cachedConfig.put(
-                    normalize(translationKey),
-                    normalizeForm(data.getFormName()),
-                    data
-            );
         }
 
-        cachedConfigSource = pokemonJsonObject;
-    }
-
-    private static String normalize(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private static String normalizeForm(String value) {
-        String normalized = normalize(value);
-        if (normalized.isEmpty()
-                || normalized.equals("normal")
-                || normalized.equals("base")
-                || normalized.equals("default")) {
-            return "none";
-        }
-        return normalized;
+        return null;
     }
 
     public static Vec3 clampVec3(Vec3 vec3, double min, double max) {

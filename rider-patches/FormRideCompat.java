@@ -3,111 +3,77 @@ package dev.zanckor.cobblemonrider;
 import dev.zanckor.cobblemonrider.config.PokemonJsonObject;
 
 import java.util.Locale;
-import java.util.Map;
+import java.util.Set;
 
 /**
- * Form-aware mount lookup for Cobblemon, Megamons/Generations and other form addons.
- *
- * Lookup order:
- * 1) exact species + exact form from pokemonRideConfig.json
- * 2) transformed-species alias + exact form
- * 3) base entry of the real species
- * 4) base entry of the transformed-species alias
- *
- * This means explicit form-specific config always wins, while unknown Mega/GMAX/
- * Dynamax/Primal/other forms remain rideable by safely falling back to the base
- * species instead of becoming unmountable.
+ * Compatibility-first form resolver. It intentionally follows the same lookup
+ * order as the user's working GMAX/Mega Fix V2 and only extends the known
+ * fallback forms with Primal support.
  */
 public final class FormRideCompat {
-    private static final Map<String, String> SPECIAL_SPECIES_ALIASES = Map.of(
-            "megacharizardx", "charizard",
-            "megacharizardy", "charizard",
-            "megamewtwox", "mewtwo",
-            "megamewtwoy", "mewtwo"
+    private static final Set<String> MEGAMONS = Set.of(
+            "aerodactyl", "alakazam", "beedrill", "blastoise", "charizardx",
+            "charizardy", "gengar", "gyarados", "kangaskhan", "mewtwox",
+            "mewtwoy", "pidgeot", "pinsir", "slowbro", "venusaur",
+            "ampharos", "scizor", "steelix", "tyranitar", "banette",
+            "gardevoir", "glalie", "mawile", "sableye", "sharpedo",
+            "gallade", "garchomp"
     );
-
-    private static final String[] TRANSFORM_PREFIXES = {
-            "gigantamax",
-            "dynamax",
-            "primal",
-            "gmax",
-            "mega"
-    };
 
     private FormRideCompat() {
     }
 
     public static PokemonJsonObject.PokemonConfigData resolve(String speciesName, String formName) {
-        if (speciesName == null || speciesName.isBlank()) {
+        if (speciesName == null || formName == null) {
             return null;
         }
 
-        String normalizedForm = normalizeForm(formName);
-
-        // Explicit form-specific entry has highest priority.
-        PokemonJsonObject.PokemonConfigData exact =
-                MCUtil.getPassengerObject(speciesName, normalizedForm);
-        if (exact != null) {
-            return exact;
+        String normalizedForm = formName.toLowerCase(Locale.ROOT);
+        if (normalizedForm.equals("normal") || normalizedForm.equals("base")) {
+            normalizedForm = "none";
         }
 
-        String alias = resolveSpeciesAlias(speciesName);
+        PokemonJsonObject.PokemonConfigData direct =
+                MCUtil.getPassengerObject(speciesName, normalizedForm);
+        if (direct != null) {
+            return direct;
+        }
 
-        if (!alias.equalsIgnoreCase(speciesName)) {
-            PokemonJsonObject.PokemonConfigData aliasExact =
-                    MCUtil.getPassengerObject(alias, normalizedForm);
-            if (aliasExact != null) {
-                return aliasExact;
+        String normalizedSpecies = speciesName.toLowerCase(Locale.ROOT);
+
+        // Keep the exact Megamons species-prefix behaviour from V2.
+        if (normalizedSpecies.startsWith("mega")) {
+            String megaName = normalizedSpecies.substring(4);
+            if (MEGAMONS.contains(megaName)) {
+                String baseName = megaName;
+                if (baseName.equals("charizardx") || baseName.equals("charizardy")) {
+                    baseName = "Charizard";
+                } else if (baseName.equals("mewtwox") || baseName.equals("mewtwoy")) {
+                    baseName = "Mewtwo";
+                }
+                return MCUtil.getPassengerObject(baseName, "none");
             }
         }
 
-        // Generic fallback is intentionally form-agnostic. This covers Mega,
-        // GMAX, Dynamax, Primal, Origin and future addon forms without a hard
-        // dependency on the addon that created the form.
-        PokemonJsonObject.PokemonConfigData base =
-                MCUtil.getPassengerObject(speciesName, "none");
-        if (base != null) {
-            return base;
+        // Same V2 fallback list, extended with Primal.
+        if (normalizedForm.equals("gmax")
+                || normalizedForm.equals("gigantamax")
+                || normalizedForm.equals("dynamax")
+                || normalizedForm.equals("mega")
+                || normalizedForm.equals("mega-x")
+                || normalizedForm.equals("mega-y")
+                || normalizedForm.equals("primal")
+                || normalizedForm.equals("primal-kyogre")
+                || normalizedForm.equals("primal-groudon")) {
+            return MCUtil.getPassengerObject(speciesName, "none");
         }
 
-        if (!alias.equalsIgnoreCase(speciesName)) {
-            return MCUtil.getPassengerObject(alias, "none");
+        // Some addons encode Primal as the species name instead of the form.
+        if (normalizedSpecies.startsWith("primal") && normalizedSpecies.length() > 6) {
+            String baseName = normalizedSpecies.substring(6);
+            return MCUtil.getPassengerObject(baseName, "none");
         }
 
         return null;
-    }
-
-    private static String normalizeForm(String formName) {
-        if (formName == null) {
-            return "none";
-        }
-
-        String normalized = formName.trim().toLowerCase(Locale.ROOT);
-        if (normalized.isEmpty()
-                || normalized.equals("normal")
-                || normalized.equals("base")
-                || normalized.equals("default")) {
-            return "none";
-        }
-        return normalized;
-    }
-
-    private static String resolveSpeciesAlias(String speciesName) {
-        String compact = speciesName
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]", "");
-
-        String special = SPECIAL_SPECIES_ALIASES.get(compact);
-        if (special != null) {
-            return special;
-        }
-
-        for (String prefix : TRANSFORM_PREFIXES) {
-            if (compact.startsWith(prefix) && compact.length() > prefix.length()) {
-                return compact.substring(prefix.length());
-            }
-        }
-
-        return speciesName;
     }
 }

@@ -29,7 +29,7 @@ jobs:
         run: |
           git clone --depth 1 --branch Forge_1.5 https://github.com/Zanckor/CobblemonRider.git rider-src
 
-      - name: Apply HD optimized compatibility patch
+      - name: Apply V4 compatibility-first patch
         run: |
           cp rider-patches/ConfigPacket.java rider-src/src/main/java/dev/zanckor/cobblemonrider/network/packet/ConfigPacket.java
           cp rider-patches/NetworkHandler.java rider-src/src/main/java/dev/zanckor/cobblemonrider/network/NetworkHandler.java
@@ -40,22 +40,23 @@ jobs:
 
       - name: Build replacement JAR
         working-directory: rider-src
-        run: |
-          gradle clean build --no-daemon --stacktrace
+        run: gradle clean build --no-daemon --stacktrace
 
       - name: Verify built JAR
         working-directory: rider-src
         run: |
-          JAR="$(find build/libs -maxdepth 1 -name 'cobblemonrider-1.2.4-HD-Optimized-V3.jar' -print -quit)"
+          JAR="$(find build/libs -maxdepth 1 -name 'cobblemonrider-1.2.4-HD-Optimized-V4.jar' -print -quit)"
           test -n "$JAR"
           jar tf "$JAR" | grep -q 'dev/zanckor/cobblemonrider/FormRideCompat.class'
           jar tf "$JAR" | grep -q 'dev/zanckor/cobblemonrider/network/packet/ConfigPacket.class'
+          ! javap -classpath "$JAR" -c -p dev.zanckor.cobblemonrider.network.packet.ConfigPacket | grep -q 'writeUtf'
+          javap -classpath "$JAR" -c -p dev.zanckor.cobblemonrider.mixin.PokemonMixin | grep -q 'FormRideCompat.resolve'
           echo "Built: $JAR"
           sha256sum "$JAR"
 
       - name: Upload optimized replacement
         uses: actions/upload-artifact@v4
         with:
-          name: cobblemonrider-1.2.4-HD-Optimized-V3
-          path: rider-src/build/libs/cobblemonrider-1.2.4-HD-Optimized-V3.jar
+          name: cobblemonrider-1.2.4-HD-Optimized-V4
+          path: rider-src/build/libs/cobblemonrider-1.2.4-HD-Optimized-V4.jar
           if-no-files-found: error
