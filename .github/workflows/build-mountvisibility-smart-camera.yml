@@ -1,0 +1,48 @@
+name: Build Mount Visibility Smart Camera
+
+on:
+  push:
+    branches: [ "mount-visibility-smart-camera-v2" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.1.1"
+
+      - name: Build
+        working-directory: mountvisibility
+        run: gradle clean build --no-daemon --stacktrace
+
+      - name: Verify
+        working-directory: mountvisibility
+        run: |
+          JAR="$(find build/libs -maxdepth 1 -name 'Mount-Visibility-Compatibility-1.20.1-1.1.0.jar' -print -quit)"
+          test -n "$JAR"
+          jar tf "$JAR" | grep -q 'com/aqu/mountvisibility/mixin/SmartCameraMixin.class'
+          jar tf "$JAR" | grep -q 'com/aqu/mountvisibility/client/MountedPlayerHider.class'
+          echo "Built: $JAR"
+          sha256sum "$JAR"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mount-Visibility-Compatibility-1.20.1-1.1.0-SmartCamera
+          path: mountvisibility/build/libs/Mount-Visibility-Compatibility-1.20.1-1.1.0.jar
+          if-no-files-found: error
