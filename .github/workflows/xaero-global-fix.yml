@@ -1,0 +1,79 @@
+name: Build Global Xaero Icon Fix
+
+on:
+  push:
+    branches:
+      - xaero-icon-repair
+    paths:
+      - "src/main/java/dev/cobblemonbridge/client/XaeroPokemonVariantResolver.java"
+      - "tools/fix_xaero_icon_pack.py"
+      - ".github/workflows/xaero-global-fix.yml"
+      - "gradle.properties"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Gradle 8.1.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.1.1"
+
+      - name: Install Drive downloader
+        run: python -m pip install --upgrade gdown
+
+      - name: Download current minimap icon pack
+        run: |
+          mkdir -p input dist
+          gdown 1jtJwfz8Bs4MUn0P8jW6Gvm3VueCtyQXK -O input/Pokemon-Minimap-Icons-HD-Complete.zip
+          unzip -t input/Pokemon-Minimap-Icons-HD-Complete.zip >/dev/null
+
+      - name: Repair and validate icon pack
+        run: |
+          python tools/fix_xaero_icon_pack.py \
+            --input input/Pokemon-Minimap-Icons-HD-Complete.zip \
+            --output dist/Pokemon-Minimap-Icons-HD-Complete-Fixed.zip \
+            --report dist/Pokemon-Minimap-Icons-HD-Complete-Fixed-report.txt
+          unzip -t dist/Pokemon-Minimap-Icons-HD-Complete-Fixed.zip
+
+      - name: Build bridge with robust Xaero resolver
+        run: gradle clean build --stacktrace
+
+      - name: Select runtime JAR
+        run: |
+          set -euxo pipefail
+          JAR="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$JAR"
+          cp "$JAR" dist/Cobblemon-Progression-Bridge-1.20.1-1.0.1.jar
+          jar tf dist/Cobblemon-Progression-Bridge-1.20.1-1.0.1.jar | grep -F 'dev/cobblemonbridge/client/XaeroPokemonVariantResolver.class'
+
+      - name: Final manifest
+        run: |
+          sha256sum dist/* | tee dist/SHA256SUMS.txt
+          cat dist/Pokemon-Minimap-Icons-HD-Complete-Fixed-report.txt
+
+      - name: Upload fixed files
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokemon-Minimap-Icons-Global-Fix
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
