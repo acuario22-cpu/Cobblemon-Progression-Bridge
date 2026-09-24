@@ -20,6 +20,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.1.1"
+
       - name: Clone upstream CobblemonRider 1.20.1 Forge source
         run: |
           git clone --depth 1 --branch Forge_1.5 https://github.com/Zanckor/CobblemonRider.git rider-src
@@ -36,8 +41,7 @@ jobs:
       - name: Build replacement JAR
         working-directory: rider-src
         run: |
-          chmod +x gradlew
-          ./gradlew clean build --no-daemon --stacktrace
+          gradle clean build --no-daemon --stacktrace
 
       - name: Verify built JAR
         working-directory: rider-src
