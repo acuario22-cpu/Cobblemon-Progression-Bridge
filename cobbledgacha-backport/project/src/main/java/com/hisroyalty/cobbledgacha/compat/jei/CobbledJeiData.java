@@ -290,15 +290,15 @@ public final class CobbledJeiData {
             : itemId;
 
         if (path.startsWith("gigantic_pokedoll_shiny_")) {
-            return "Gigantic Shiny";
+            return "jei.cobbledgacha.variant.gigantic_shiny";
         }
         if (path.startsWith("gigantic_pokedoll_")) {
-            return "Gigantic";
+            return "jei.cobbledgacha.variant.gigantic";
         }
         if (path.startsWith("pokedoll_shiny_")) {
-            return "Shiny";
+            return "jei.cobbledgacha.variant.shiny";
         }
-        return "Normal";
+        return "jei.cobbledgacha.variant.normal";
     }
 
     private static List<ItemStack> machines(int... ids) {
