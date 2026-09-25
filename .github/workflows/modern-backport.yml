@@ -1,0 +1,35 @@
+name: Build Cobblemon Modern Backport
+on:
+  push:
+    branches: [ "modern-backport-v1" ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle 8.1.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.1.1"
+      - name: Decode source project
+        run: |
+          base64 -d modern-backport-source.b64 > modern-backport-source.zip
+          unzip -q modern-backport-source.zip
+      - name: Build
+        working-directory: modern-backport
+        run: gradle build --stacktrace
+      - name: Upload JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cobblemon-Modern-Backport-1.20.1
+          path: modern-backport/build/libs/Cobblemon-Modern-Backport-1.20.1-1.0.0.jar
+          if-no-files-found: error
