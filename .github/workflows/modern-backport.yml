@@ -1,7 +1,7 @@
-name: Build Cobblemon Modern Backport v1.6
+name: Build Cobblemon Modern Backport v1.7
 on:
   push:
-    branches: [ "modern-backport-v16" ]
+    branches: [ "modern-backport-v17" ]
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
         run: |
           cat modern-backport-source.part-*.b64 | base64 -d > modern-backport-source.tar.xz
           tar -xJf modern-backport-source.tar.xz
-      - name: Apply v1.1 through v1.6 patches
+      - name: Apply v1.1 through v1.7 patches
         run: |
           cp -R v11-overrides/. modern-backport/
           cp -R v12-overrides/. modern-backport/
@@ -31,6 +31,7 @@ jobs:
           cp -R v14-overrides/. modern-backport/
           cp -R v15-overrides/. modern-backport/
           cp -R v16-overrides/. modern-backport/
+          cp -R v17-overrides/. modern-backport/
           python apply-v11-assets.py
           python apply-v14-assets.py
           sed -i 's/import net.minecraft.world.level.Heightmap;/import net.minecraft.world.level.levelgen.Heightmap;/' modern-backport/src/main/java/dev/cobblemodern/habitat/HabitatSystem.java
@@ -41,6 +42,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Cobblemon-Modern-Backport-1.20.1-v1.6
-          path: modern-backport/build/libs/Cobblemon-Modern-Backport-1.20.1-1.6.0.jar
+          name: Cobblemon-Modern-Backport-1.20.1-v1.7
+          path: modern-backport/build/libs/Cobblemon-Modern-Backport-1.20.1-1.7.0.jar
           if-no-files-found: error
