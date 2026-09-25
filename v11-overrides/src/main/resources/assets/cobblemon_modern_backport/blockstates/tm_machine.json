@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": {"model":"cobblemon_modern_backport:block/tm_machine"},
+    "facing=east":  {"model":"cobblemon_modern_backport:block/tm_machine","y":90},
+    "facing=south": {"model":"cobblemon_modern_backport:block/tm_machine","y":180},
+    "facing=west":  {"model":"cobblemon_modern_backport:block/tm_machine","y":270}
+  }
+}
