@@ -4,6 +4,7 @@ import com.hisroyalty.cobbledgacha.CobbledGacha;
 import com.hisroyalty.cobbledgacha.cobblemon.PokemonCommandSpawner;
 import com.hisroyalty.cobbledgacha.config.DatapackConfig;
 import com.hisroyalty.cobbledgacha.config.MachineType;
+import com.hisroyalty.cobbledgacha.loot.RewardTableManager;
 import com.hisroyalty.cobbledgacha.world.GachaCooldownData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -37,10 +38,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
@@ -225,6 +222,30 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
             machine.setLockedCurrencyId(currencyId);
         }
 
+        String rewardTableKey = null;
+        if (getMachineType() != MachineType.SPAWNER) {
+            rewardTableKey = lootKey;
+            if (getMachineType() == MachineType.SPECIFIC && machine.getLockedCurrencyId() != null) {
+                rewardTableKey += "_" + machine.getLockedCurrencyId().getPath();
+            }
+
+            if (!RewardTableManager.hasValidRewards(rewardTableKey)) {
+                if (player != null) {
+                    player.displayClientMessage(
+                        Component.translatable(
+                            configProperty == 12
+                                ? "message.cobbledgacha.plush_dependency_missing"
+                                : "message.cobbledgacha.no_valid_rewards"
+                        ).withStyle(ChatFormatting.RED),
+                        false
+                    );
+                }
+                machine.setGachaLevel(0);
+                machine.clearLockedCurrency();
+                return false;
+            }
+        }
+
         if (player == null || !player.getAbilities().instabuild) {
             currency.shrink(1);
         }
@@ -291,12 +312,7 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
                 }
             }
         } else {
-            String tableKey = lootKey;
-            if (getMachineType() == MachineType.SPECIFIC && machine.getLockedCurrencyId() != null) {
-                tableKey += "_" + machine.getLockedCurrencyId().getPath();
-            }
-
-            List<ItemStack> rewards = roll(level, pos, player, tableKey);
+            List<ItemStack> rewards = RewardTableManager.roll(rewardTableKey, level);
             dispensed = !rewards.isEmpty();
 
             if (rewards.isEmpty()) {
@@ -353,21 +369,6 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
             default ->
                 Component.translatable("message.cobbledgacha.currency.valid");
         };
-    }
-
-    private List<ItemStack> roll(
-        ServerLevel level,
-        BlockPos pos,
-        @Nullable ServerPlayer player,
-        String tableKey
-    ) {
-        LootTable table = level.getServer().getLootData().getLootTable(CobbledGacha.id(tableKey));
-        LootParams.Builder builder = new LootParams.Builder(level)
-            .withParameter(LootContextParams.ORIGIN, pos.getCenter());
-        if (player != null) {
-            builder.withOptionalParameter(LootContextParams.THIS_ENTITY, player);
-        }
-        return table.getRandomItems(builder.create(LootContextParamSets.CHEST));
     }
 
     private void deliver(
