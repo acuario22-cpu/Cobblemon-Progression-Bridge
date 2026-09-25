@@ -41,14 +41,16 @@ jobs:
 
           cp -a "$TMP/original/assets/pokeblocks" "$PROJECT/src/main/resources/assets/"
           cp "$TMP/original/LICENSE_pokeblocks" "$PROJECT/LICENSE_ORIGINAL.txt"
+          export POKEBLOCKS_ORIGINAL_DIR="$TMP/original"
 
           python3 - <<'PY'
           import json
+          import os
           import pathlib
           import shutil
 
           project = pathlib.Path("pokeblocks-backport/project")
-          original = pathlib.Path("$TMP/original")
+          original = pathlib.Path(os.environ["POKEBLOCKS_ORIGINAL_DIR"])
           assets = original / "assets/pokeblocks"
           data = original / "data/pokeblocks"
           blockstates = assets / "blockstates"
