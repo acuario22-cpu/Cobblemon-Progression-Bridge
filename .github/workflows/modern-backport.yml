@@ -21,8 +21,8 @@ jobs:
           gradle-version: "8.1.1"
       - name: Decode source project
         run: |
-          base64 -d modern-backport-source.b64 > modern-backport-source.zip
-          unzip -q modern-backport-source.zip
+          cat modern-backport-source.part-*.b64 | base64 -d > modern-backport-source.tar.xz
+          tar -xJf modern-backport-source.tar.xz
       - name: Build
         working-directory: modern-backport
         run: gradle build --stacktrace
