@@ -17,6 +17,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -35,6 +36,8 @@ import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -46,17 +49,21 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
 
     private final TagKey<Item> currencyTag;
     private final String lootKey;
+    private final String expectedCoinName;
 
-    public GachaMachineBlock(Properties properties, TagKey<Item> currencyTag, String lootKey) {
+    public GachaMachineBlock(Properties properties, TagKey<Item> currencyTag, String lootKey, String expectedCoinName) {
         super(properties);
         this.currencyTag = currencyTag;
         this.lootKey = lootKey;
+        this.expectedCoinName = expectedCoinName;
         registerDefaultState(stateDefinition.any()
             .setValue(FACING, Direction.NORTH)
             .setValue(HALF, DoubleBlockHalf.LOWER));
     }
 
     public TagKey<Item> getCurrencyTag() { return currencyTag; }
+    public String getLootKey() { return lootKey; }
+    public String getExpectedCoinName() { return expectedCoinName; }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
@@ -78,11 +85,26 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
                             @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        level.setBlock(pos.above(), state.setValue(HALF, DoubleBlockHalf.UPPER), 3);
+        level.setBlock(pos.above(), state.setValue(HALF, DoubleBlockHalf.UPPER), Block.UPDATE_ALL);
     }
 
     private BlockPos lowerPos(BlockState state, BlockPos pos) {
         return state.getValue(HALF) == DoubleBlockHalf.UPPER ? pos.below() : pos;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        boolean upper = state.getValue(HALF) == DoubleBlockHalf.UPPER;
+        Direction facing = state.getValue(FACING);
+        if (facing == Direction.EAST || facing == Direction.WEST) {
+            return upper ? Block.box(0.5, 0, 1, 15.5, 16, 15) : Block.box(0, 0, 0.5, 15, 16, 15.5);
+        }
+        return upper ? Block.box(1, 0, 0.5, 15, 16, 15.5) : Block.box(0.5, 0, 0, 15.5, 16, 15);
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return getShape(state, level, pos, context);
     }
 
     @Override
@@ -139,9 +161,10 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
 
         ItemStack held = player.getItemInHand(hand);
         if (held.isEmpty() || !held.is(currencyTag)) {
+            Component required = Component.translatable("item.gachamachine." + expectedCoinName)
+                .withStyle(ChatFormatting.GOLD);
             player.displayClientMessage(
-                Component.translatable("message.gacha_machine.invalid_currency",
-                    Component.literal("#" + currencyTag.location()).withStyle(ChatFormatting.RED))
+                Component.translatable("message.gacha_machine.invalid_currency", required)
                     .withStyle(ChatFormatting.RED), true);
             return InteractionResult.CONSUME;
         }
@@ -153,7 +176,10 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
             be.setGachaLevel(next);
             player.displayClientMessage(Component.literal("[" + next + "/" + DEFAULT_MAX_CURRENCY + "]"), true);
         } else {
+            player.displayClientMessage(Component.literal("[" + DEFAULT_MAX_CURRENCY + "/" + DEFAULT_MAX_CURRENCY + "]")
+                .withStyle(ChatFormatting.GREEN), true);
             be.setGachaLevel(0);
+
             ItemStack reward = rollReward((ServerLevel) level, lower, player);
             if (reward.isEmpty()) {
                 player.displayClientMessage(
