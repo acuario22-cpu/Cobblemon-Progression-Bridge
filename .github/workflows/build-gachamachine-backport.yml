@@ -1,0 +1,62 @@
+name: Build GachaMachine Forge 1.20.1 Backport
+
+on:
+  push:
+    branches: [ "gachamachine-forge-1.20.1" ]
+    paths:
+      - "gachamachine-backport/**"
+      - ".github/workflows/build-gachamachine-backport.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 8.1.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.1.1"
+
+      - name: Restore backport source
+        run: |
+          base64 -d gachamachine-backport/source-project.zip.b64 > /tmp/gachamachine-backport-source.zip
+          unzip -q /tmp/gachamachine-backport-source.zip -d gachamachine-backport
+
+      - name: Download original NeoForge 2.0.2 resources
+        run: |
+          curl -L --fail --retry 3 \
+            -o /tmp/gachamachine-neoforge-1.21.1-2.0.2.jar \
+            "https://cdn.modrinth.com/data/67dS28p4/versions/Lv0KCHQY/gachamachine-neoforge-1.21.1-2.0.2.jar"
+          python gachamachine-backport/project/scripts/prepare_upstream.py \
+            /tmp/gachamachine-neoforge-1.21.1-2.0.2.jar \
+            gachamachine-backport/project/src/generated/resources
+
+      - name: Build Forge 1.20.1 JAR
+        working-directory: gachamachine-backport/project
+        run: gradle build --stacktrace
+
+      - name: Collect runtime JAR
+        if: success()
+        run: |
+          mkdir -p dist
+          find gachamachine-backport/project/build/libs -maxdepth 1 -type f -name "*.jar" ! -name "*sources*" -exec cp {} dist/ \;
+          ls -lah dist
+
+      - name: Upload JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GachaMachine-Forge-1.20.1-2.0.2-backport
+          path: dist/*.jar
+          if-no-files-found: error
