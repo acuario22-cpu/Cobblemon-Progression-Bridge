@@ -22,7 +22,7 @@ public class GachaRewardCategory implements IRecipeCategory<GachaRewardRecipe> {
     private final IDrawable icon;
 
     public GachaRewardCategory(IGuiHelper gui) {
-        background = gui.createBlankDrawable(154, 48);
+        background = gui.createBlankDrawable(166, 54);
         icon = gui.createDrawableIngredient(mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
             new ItemStack(GachaMachine.MACHINES.get("gacha_machine").get()));
     }
@@ -34,16 +34,17 @@ public class GachaRewardCategory implements IRecipeCategory<GachaRewardRecipe> {
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, GachaRewardRecipe recipe, IFocusGroup focuses) {
-        builder.addSlot(RecipeIngredientRole.CATALYST, 8, 18).addItemStack(recipe.machine());
-        builder.addSlot(RecipeIngredientRole.INPUT, 46, 18).addItemStack(recipe.currency());
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 124, 18).addItemStack(recipe.reward());
+        builder.addSlot(RecipeIngredientRole.CATALYST, 8, 20).addItemStacks(recipe.machines());
+        builder.addSlot(RecipeIngredientRole.INPUT, 52, 20).addItemStacks(recipe.currencies());
+        builder.addSlot(RecipeIngredientRole.OUTPUT, 136, 20).addItemStack(recipe.reward());
     }
 
     @Override
     public void draw(GachaRewardRecipe recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         var font = Minecraft.getInstance().font;
-        graphics.drawString(font, Component.literal("5x"), 67, 22, 0x404040, false);
+        graphics.drawString(font, Component.translatable("jei.gachamachine.any_machine"), 4, 4, 0x404040, false);
+        graphics.drawString(font, Component.literal("5x"), 75, 24, 0x404040, false);
         graphics.drawString(font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f%%", recipe.chance())),
-            88, 22, 0x404040, false);
+            98, 24, 0x404040, false);
     }
 }
