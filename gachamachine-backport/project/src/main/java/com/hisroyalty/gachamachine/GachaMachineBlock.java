@@ -51,7 +51,7 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
     private final String lootKey;
     private final String expectedCoinName;
 
-    public GachaMachineBlock(Properties properties, TagKey<Item> currencyTag, String lootKey, String expectedCoinName) {
+    public GachaMachineBlock(Properties properties, TagKey<Item> currencyTag, String lootKey) {
         super(properties);
         this.currencyTag = currencyTag;
         this.lootKey = lootKey;
@@ -161,10 +161,8 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
 
         ItemStack held = player.getItemInHand(hand);
         if (held.isEmpty() || !held.is(currencyTag)) {
-            Component required = Component.translatable("item.gachamachine." + expectedCoinName)
-                .withStyle(ChatFormatting.GOLD);
             player.displayClientMessage(
-                Component.translatable("message.gacha_machine.invalid_currency", required)
+                Component.translatable("message.gacha_machine.invalid_any_currency")
                     .withStyle(ChatFormatting.RED), true);
             return InteractionResult.CONSUME;
         }
