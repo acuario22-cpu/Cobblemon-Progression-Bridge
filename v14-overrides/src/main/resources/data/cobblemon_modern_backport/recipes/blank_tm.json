@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PCP",
+    "PRP",
+    "PCP"
+  ],
+  "key": {
+    "P": {"item": "minecraft:paper"},
+    "C": {"item": "minecraft:copper_ingot"},
+    "R": {"item": "minecraft:redstone"}
+  },
+  "result": {
+    "item": "cobblemon_modern_backport:blank_tm",
+    "count": 4
+  }
+}
