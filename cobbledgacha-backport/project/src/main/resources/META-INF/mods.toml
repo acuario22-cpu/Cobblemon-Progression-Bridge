@@ -1,0 +1,33 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+[[mods]]
+modId="cobbledgacha"
+version="${version}"
+displayName="Cobbled Gacha - Forge 1.20.1 Compatibility Backport"
+authors="hisroyalty, DogtorBloo"
+description='''Compatibility backport of Cobbled Gacha 3.0.3 for Minecraft 1.20.1 Forge and Cobblemon 1.5.2.'''
+[[dependencies.cobbledgacha]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.0,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.cobbledgacha]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.cobbledgacha]]
+modId="cobblemon"
+mandatory=true
+versionRange="[1.5.2,1.6)"
+ordering="AFTER"
+side="BOTH"
+[[dependencies.cobbledgacha]]
+modId="geckolib"
+mandatory=true
+versionRange="[4.4.9,)"
+ordering="AFTER"
+side="BOTH"
