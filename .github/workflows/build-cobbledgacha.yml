@@ -58,6 +58,51 @@ jobs:
           for n in range(1,13):
               name="gacha_machine" if n==1 else f"gacha_machine_{n}"
               (item_models/f"{name}.json").write_text(json.dumps({"parent":"minecraft:item/generated","textures":{"layer0":f"cobbledgacha:item/{name}"}},indent=2)+"\n")
+
+          # Build a compact client-side index of the default Pokémon pools so JEI can display them.
+          pools_root=root/"src/main/resources/data/cobbledgacha/spawn_pool_files"
+          spawn_index=[]
+          for p in pools_root.rglob("*.json"):
+              rel=p.relative_to(pools_root)
+              if not rel.parts: continue
+              pool=rel.parts[0]
+              try:
+                  d=json.loads(p.read_text())
+                  for s in d.get("spawns",[]):
+                      if not isinstance(s,dict): continue
+                      spawn_index.append({
+                          "pool":pool,
+                          "species":s.get("species",""),
+                          "bucket":s.get("bucket","common"),
+                          "weight":s.get("weight",1.0),
+                          "minLevel":s.get("minLevel",1),
+                          "maxLevel":s.get("maxLevel",s.get("minLevel",1))
+                      })
+              except Exception:
+                  pass
+          jei_dir=root/"src/main/resources/assets/cobbledgacha/jei"
+          jei_dir.mkdir(parents=True,exist_ok=True)
+          (jei_dir/"spawn_index.json").write_text(json.dumps(spawn_index,ensure_ascii=False,separators=(",",":"))+"\n")
+
+          # Add JEI labels to the original language files.
+          lang_dir=root/"src/main/resources/assets/cobbledgacha/lang"
+          for lang_name, labels in {
+              "en_us.json":{
+                  "jei.cobbledgacha.machine_rewards":"Cobbled Gacha Rewards",
+                  "jei.cobbledgacha.capsule_rewards":"Capsule Contents",
+                  "jei.cobbledgacha.pokemon_rewards":"Pokémon Gacha Rewards"
+              },
+              "es_es.json":{
+                  "jei.cobbledgacha.machine_rewards":"Premios de Cobbled Gacha",
+                  "jei.cobbledgacha.capsule_rewards":"Contenido de Cápsulas",
+                  "jei.cobbledgacha.pokemon_rewards":"Premios Pokémon de Gacha"
+              }
+          }.items():
+              path=lang_dir/lang_name
+              if path.exists():
+                  data=json.loads(path.read_text())
+                  data.update(labels)
+                  path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+"\n")
           PY
           cp "$TMP/original/LICENSE_Cobbled Gacha" "$PROJECT/LICENSE_ORIGINAL.txt" || true
       - name: Build
