@@ -37,7 +37,7 @@ public class GachaMachine {
 
     public static final Map<String, RegistryObject<GachaMachineBlock>> MACHINES = new LinkedHashMap<>();
     public static final Map<String, RegistryObject<Item>> COINS = new LinkedHashMap<>();
-    public static final Map<String, RegistryObject<CapsuleItem>> CAPSULES = new LinkedHashMap<>();
+    public static final Map<String, RegistryObject<CapsuleItem>> CAPSULES = new LinkedHashMap<>();\n    public static final List<String> USEFUL_CAPSULES = List.of("capsule_a1", "capsule_a3", "capsule_a4", "capsule_a9", "capsule_a10");
     public static final RegistryObject<BlockEntityType<GachaMachineBlockEntity>> MACHINE_BE;
     public static final RegistryObject<CreativeModeTab> GACHA_TAB;
 
@@ -83,7 +83,7 @@ public class GachaMachine {
             .displayItems((params, output) -> {
                 MACHINES.values().forEach(v -> output.accept(v.get()));
                 COINS.values().forEach(v -> output.accept(v.get()));
-                CAPSULES.values().forEach(v -> output.accept(v.get()));
+                USEFUL_CAPSULES.forEach(name -> output.accept(CAPSULES.get(name).get()));
             })
             .build());
     }
