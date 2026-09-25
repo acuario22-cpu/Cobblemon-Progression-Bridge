@@ -4,6 +4,7 @@ import com.hisroyalty.cobbledgacha.block.*;
 import com.hisroyalty.cobbledgacha.client.GachaMachineRenderer;
 import com.hisroyalty.cobbledgacha.cobblemon.GachaSpawnPools;
 import com.hisroyalty.cobbledgacha.item.*;
+import com.hisroyalty.cobbledgacha.loot.RewardTableManager;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.registries.Registries;
@@ -117,6 +118,7 @@ public class CobbledGacha {
     @SubscribeEvent
     public void addReloadListeners(AddReloadListenerEvent e){
         e.addListener(new GachaSpawnPools());
+        e.addListener(new RewardTableManager());
     }
 
     public static ResourceLocation id(String path){
