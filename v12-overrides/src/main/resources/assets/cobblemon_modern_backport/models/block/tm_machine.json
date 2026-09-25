@@ -1,0 +1,45 @@
+{
+  "textures": {
+    "side": "cobblemon_modern_backport:block/tm_machine_side",
+    "top": "cobblemon_modern_backport:block/tm_machine_top",
+    "front": "cobblemon_modern_backport:block/tm_machine_front",
+    "bottom": "cobblemon_modern_backport:block/tm_machine_bottom",
+    "screen": "cobblemon_modern_backport:block/tm_machine_screen",
+    "particle": "cobblemon_modern_backport:block/tm_machine_side"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0], "to": [16, 10, 16],
+      "faces": {
+        "down": {"texture": "#bottom", "cullface": "down"},
+        "up": {"texture": "#top"},
+        "north": {"texture": "#front"},
+        "south": {"texture": "#side"},
+        "west": {"texture": "#side"},
+        "east": {"texture": "#side"}
+      }
+    },
+    {
+      "from": [2, 10, 2], "to": [14, 15, 14],
+      "faces": {
+        "down": {"texture": "#side"},
+        "up": {"texture": "#top"},
+        "north": {"texture": "#screen"},
+        "south": {"texture": "#side"},
+        "west": {"texture": "#side"},
+        "east": {"texture": "#side"}
+      }
+    },
+    {
+      "from": [4, 15, 5], "to": [12, 16, 13],
+      "faces": {
+        "down": {"texture": "#side"},
+        "up": {"texture": "#top"},
+        "north": {"texture": "#front"},
+        "south": {"texture": "#side"},
+        "west": {"texture": "#side"},
+        "east": {"texture": "#side"}
+      }
+    }
+  ]
+}
