@@ -25,6 +25,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Mod(GachaMachine.MOD_ID)
@@ -37,29 +38,28 @@ public class GachaMachine {
 
     public static final Map<String, RegistryObject<GachaMachineBlock>> MACHINES = new LinkedHashMap<>();
     public static final Map<String, RegistryObject<Item>> COINS = new LinkedHashMap<>();
-    public static final Map<String, RegistryObject<CapsuleItem>> CAPSULES = new LinkedHashMap<>();\n    public static final List<String> USEFUL_CAPSULES = List.of("capsule_a1", "capsule_a3", "capsule_a4", "capsule_a9", "capsule_a10");
+    public static final Map<String, RegistryObject<CapsuleItem>> CAPSULES = new LinkedHashMap<>();
+    public static final List<String> USEFUL_CAPSULES = List.of(
+        "capsule_a1", "capsule_a3", "capsule_a4", "capsule_a9", "capsule_a10"
+    );
     public static final RegistryObject<BlockEntityType<GachaMachineBlockEntity>> MACHINE_BE;
     public static final RegistryObject<CreativeModeTab> GACHA_TAB;
 
     static {
         for (int i = 1; i <= 10; i++) {
-            final int n = i;
-            final String coinName = n == 1 ? "gacha_coin" : "gacha_coin_" + n;
+            final String coinName = i == 1 ? "gacha_coin" : "gacha_coin_" + i;
             COINS.put(coinName, ITEMS.register(coinName, () -> new Item(new Item.Properties())));
         }
 
         for (int i = 1; i <= 10; i++) {
-            final int n = i;
-            final String machineName = n == 1 ? "gacha_machine" : "gacha_machine_" + n;
-            final String tagName = n == 1 ? "currency_items" : "currency_items_" + n;
-            final String expectedCoinName = expectedCoinForMachine(n);
+            final String machineName = i == 1 ? "gacha_machine" : "gacha_machine_" + i;
+            final String tagName = i == 1 ? "currency_items" : "currency_items_" + i;
 
             RegistryObject<GachaMachineBlock> block = BLOCKS.register(machineName, () ->
                 new GachaMachineBlock(
                     BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.0F, 6.0F).noOcclusion(),
                     TagKey.create(Registries.ITEM, id(tagName)),
-                    machineName,
-                    expectedCoinName));
+                    machineName));
             MACHINES.put(machineName, block);
             ITEMS.register(machineName, () -> new BlockItem(block.get(), new Item.Properties()));
         }
@@ -94,13 +94,6 @@ public class GachaMachine {
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);
         TABS.register(bus);
-    }
-
-    public static String expectedCoinForMachine(int machine) {
-        if (machine <= 1) return "gacha_coin";
-        if (machine == 9) return "gacha_coin_10"; // black
-        if (machine == 10) return "gacha_coin_9"; // white
-        return "gacha_coin_" + machine;
     }
 
     public static ResourceLocation id(String path) {
