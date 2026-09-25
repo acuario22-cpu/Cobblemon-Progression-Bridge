@@ -48,21 +48,70 @@ jobs:
           mkdir -p "$PROJECT/src/main/resources/data/gachamachine/tags"
           cp -a "$TMP/original/data/gachamachine/tags/item" "$PROJECT/src/main/resources/data/gachamachine/tags/items"
 
-          # Minecraft 1.20.1 recipe result uses "item" instead of the 1.21.1 "id".
+          # Migrate recipes, loot contexts, currency tags, block rotation and JEI labels.
           python3 - <<'PY'
           import json, pathlib
-          root = pathlib.Path("gachamachine-backport/project/src/main/resources/data/gachamachine/recipes")
-          for path in root.glob("*.json"):
+          project = pathlib.Path("gachamachine-backport/project")
+          recipes = project / "src/main/resources/data/gachamachine/recipes"
+          loot = project / "src/main/resources/data/gachamachine/loot_tables"
+          tags = project / "src/main/resources/data/gachamachine/tags/items"
+          assets = project / "src/main/resources/assets/gachamachine"
+
+          # Minecraft 1.20.1 recipe result uses "item" instead of the 1.21.1 "id".
+          for path in recipes.rglob("*.json"):
               data = json.loads(path.read_text())
               result = data.get("result")
               if isinstance(result, dict) and "id" in result and "item" not in result:
                   result["item"] = result.pop("id")
               path.write_text(json.dumps(data, indent=2) + "\n")
-          PY
 
-          # The custom 1.21 loot context id is not registered in 1.20.1.
-          find "$PROJECT/src/main/resources/data/gachamachine/loot_tables" -name '*.json' -print0 |
-            xargs -0 sed -i 's/"type"[[:space:]]*:[[:space:]]*"gachamachine:gacha_machine"/"type": "minecraft:generic"/g'
+          # All custom 1.21 loot context ids are unavailable in Forge 1.20.1.
+          for path in loot.rglob("*.json"):
+              try:
+                  data = json.loads(path.read_text())
+                  if isinstance(data, dict) and str(data.get("type", "")).startswith("gachamachine:"):
+                      data["type"] = "minecraft:generic"
+                  if "random_sequences" in data and "random_sequence" not in data:
+                      data["random_sequence"] = data.pop("random_sequences")
+                  path.write_text(json.dumps(data, indent=2) + "\n")
+              except Exception:
+                  pass
+
+          # The original 2.0.2 data accidentally points every coloured machine at the base coin.
+          # Correct each machine to its matching colour; machine 9/10 are Black/White while coin 9/10 are White/Black.
+          coin_for_machine = {1:"gacha_coin", 2:"gacha_coin_2", 3:"gacha_coin_3", 4:"gacha_coin_4",
+                              5:"gacha_coin_5", 6:"gacha_coin_6", 7:"gacha_coin_7", 8:"gacha_coin_8",
+                              9:"gacha_coin_10", 10:"gacha_coin_9"}
+          for i, coin in coin_for_machine.items():
+              name = "currency_items.json" if i == 1 else f"currency_items_{i}.json"
+              (tags / name).write_text(json.dumps({"values":[f"gachamachine:{coin}"]}, indent=2) + "\n")
+
+          # The original blockstates did not expose the FACING property, so every machine faced north.
+          blockstates = assets / "blockstates"
+          for i in range(1, 11):
+              name = "gacha_machine" if i == 1 else f"gacha_machine_{i}"
+              variants = {}
+              rotations = {"north":0, "east":90, "south":180, "west":270}
+              for facing, y in rotations.items():
+                  for half in ("lower", "upper"):
+                      v = {"model": f"gachamachine:block/{name}"}
+                      if y:
+                          v["y"] = y
+                      v["uvlock"] = True
+                      variants[f"facing={facing},half={half}"] = v
+              (blockstates / f"{name}.json").write_text(json.dumps({"variants":variants}, indent=2) + "\n")
+
+          # Add JEI labels without replacing the original translations.
+          for lang_name, title1, title2 in (
+              ("en_us.json", "Gacha Machine Rewards", "Capsule Contents"),
+              ("es_es.json", "Premios de Máquina Gacha", "Contenido de Cápsulas"),
+          ):
+              path = assets / "lang" / lang_name
+              data = json.loads(path.read_text())
+              data["jei.gachamachine.gacha_rewards"] = title1
+              data["jei.gachamachine.capsule_rewards"] = title2
+              path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+          PY
 
           if [ -f "$TMP/original/LICENSE_Bloo's Gacha Machine" ]; then
             cp "$TMP/original/LICENSE_Bloo's Gacha Machine" "$PROJECT/LICENSE_ORIGINAL_CC0.txt"
