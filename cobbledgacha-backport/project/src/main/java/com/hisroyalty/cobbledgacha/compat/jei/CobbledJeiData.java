@@ -20,35 +20,35 @@ public final class CobbledJeiData {
         "creepy_yarn","fantasy_yarn","feathery_yarn","fiery_yarn","frosty_yarn","grassy_yarn",
         "hardy_yarn","plain_yarn","soggy_yarn","sparky_yarn","toothy_yarn"
     };
+    private static final int POKEMON_PER_PAGE = 7;
 
     public static List<MachineRewardRecipe> machineRewards() {
         List<MachineRewardRecipe> out = new ArrayList<>();
-        for (int i = 1; i <= 11; i++) {
-            if (i == 4) continue;
-            String machineName = i == 1 ? "gacha_machine" : "gacha_machine_" + i;
-            Item machine = item("cobbledgacha:" + machineName);
-            if (machine == null) continue;
-            List<ItemStack> currencies = currencies(i);
-            int cost = cost(i);
-            JsonObject table = readObject("/data/cobbledgacha/loot_tables/" + machineName + ".json");
-            addLootRecipes(out, new ItemStack(machine), currencies, cost, table);
-        }
 
-        Item machine12 = item("cobbledgacha:gacha_machine_12");
-        if (machine12 != null) {
-            for (String yarn : YARNS) {
-                Item yarnItem = item("cobbledgacha:" + yarn);
-                if (yarnItem == null) continue;
-                JsonObject table = readObject("/data/cobbledgacha/loot_tables/gacha_machine_12_" + yarn + ".json");
-                addLootRecipes(out, new ItemStack(machine12), List.of(new ItemStack(yarnItem)), cost(12), table);
-            }
+        // Poké Gacha colour variants 1 and 5-10 are cosmetic equivalents:
+        // same currency, same cost and same reward table. Show them as one JEI recipe set.
+        addLootRecipes(out, machines(1,5,6,7,8,9,10), currencies(1), cost(1),
+            readObject("/data/cobbledgacha/loot_tables/gacha_machine.json"));
+
+        addLootRecipes(out, machines(2), currencies(2), cost(2),
+            readObject("/data/cobbledgacha/loot_tables/gacha_machine_2.json"));
+        addLootRecipes(out, machines(3), currencies(3), cost(3),
+            readObject("/data/cobbledgacha/loot_tables/gacha_machine_3.json"));
+        addLootRecipes(out, machines(11), currencies(11), cost(11),
+            readObject("/data/cobbledgacha/loot_tables/gacha_machine_11.json"));
+
+        for (String yarn : YARNS) {
+            Item yarnItem = item("cobbledgacha:" + yarn);
+            if (yarnItem == null) continue;
+            JsonObject table = readObject("/data/cobbledgacha/loot_tables/gacha_machine_12_" + yarn + ".json");
+            addLootRecipes(out, machines(12), List.of(new ItemStack(yarnItem)), cost(12), table);
         }
         return out;
     }
 
     public static List<CapsuleRewardRecipe> capsuleRewards() {
         List<CapsuleRewardRecipe> out = new ArrayList<>();
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= CobbledGacha.USEFUL_CAPSULE_COUNT; i++) {
             String name = "capsule_a" + i;
             Item capsule = item("cobbledgacha:" + name);
             if (capsule == null) continue;
@@ -77,10 +77,12 @@ public final class CobbledJeiData {
             if (!el.isJsonObject()) continue;
             JsonObject o = el.getAsJsonObject();
             if (!"gacha_machine_4".equals(str(o, "pool", ""))) continue;
+            String species = str(o, "species", "");
+            if (species.isBlank()) continue;
             entries.add(new SpawnEntry(
-                str(o, "species", ""),
+                species,
                 str(o, "bucket", "common"),
-                dbl(o, "weight", 1.0),
+                Math.max(0.0, dbl(o, "weight", 1.0)),
                 integer(o, "minLevel", 1),
                 integer(o, "maxLevel", 1)
             ));
@@ -88,28 +90,61 @@ public final class CobbledJeiData {
         if (entries.isEmpty()) return out;
 
         Map<String, Double> totals = new HashMap<>();
-        for (SpawnEntry e : entries) totals.merge(e.bucket, Math.max(0.0, e.weight), Double::sum);
+        for (SpawnEntry e : entries) totals.merge(e.bucket, e.weight, Double::sum);
+
         Map<String, Integer> bucketWeights = bucketWeights();
         int bucketTotal = totals.keySet().stream().mapToInt(b -> Math.max(0, bucketWeights.getOrDefault(b, 1))).sum();
-        if (bucketTotal <= 0) bucketTotal = totals.size();
+        if (bucketTotal <= 0) bucketTotal = Math.max(1, totals.size());
+
+        List<PokemonRewardLine> lines = new ArrayList<>();
+        for (SpawnEntry e : entries) {
+            double inBucket = totals.getOrDefault(e.bucket, 0.0);
+            if (inBucket <= 0 || e.weight <= 0) continue;
+            int bw = Math.max(0, bucketWeights.getOrDefault(e.bucket, 1));
+            float chance = (float)(100.0 * (bw / (double)bucketTotal) * (e.weight / inBucket));
+            lines.add(new PokemonRewardLine(e.species, e.bucket, e.minLevel, Math.max(e.minLevel, e.maxLevel), chance));
+        }
+
+        Map<String, Integer> order = Map.of("common",0,"uncommon",1,"rare",2,"ultra_rare",3,"legendary",4);
+        lines.sort(Comparator
+            .comparingInt((PokemonRewardLine e) -> order.getOrDefault(e.bucket(), 99))
+            .thenComparing(PokemonRewardLine::species));
 
         Item machine = item("cobbledgacha:gacha_machine_4");
         if (machine == null) return out;
         List<ItemStack> currency = currencies(4);
 
-        for (SpawnEntry e : entries) {
-            double inBucket = totals.getOrDefault(e.bucket, 0.0);
-            if (inBucket <= 0) continue;
-            int bw = Math.max(0, bucketWeights.getOrDefault(e.bucket, 1));
-            float chance = (float)(100.0 * (bw / (double)bucketTotal) * (Math.max(0.0, e.weight) / inBucket));
-            out.add(new PokemonGachaRecipe(new ItemStack(machine), currency, e.species, e.bucket,
-                e.minLevel, e.maxLevel, chance, cost(4)));
+        for (int start = 0; start < lines.size(); start += POKEMON_PER_PAGE) {
+            int end = Math.min(lines.size(), start + POKEMON_PER_PAGE);
+            out.add(new PokemonGachaRecipe(
+                new ItemStack(machine),
+                copy(currency),
+                List.copyOf(lines.subList(start, end)),
+                cost(4)));
         }
         return out;
     }
 
-    private static void addLootRecipes(List<MachineRewardRecipe> out, ItemStack machine, List<ItemStack> currencies, int cost, JsonObject table) {
-        if (table == null) return;
+    public static List<ItemStack> hiddenCapsules() {
+        List<ItemStack> hidden = new ArrayList<>();
+        for (int i = CobbledGacha.USEFUL_CAPSULE_COUNT; i < CobbledGacha.CAPSULES.size(); i++) {
+            hidden.add(new ItemStack(CobbledGacha.CAPSULES.get(i).get()));
+        }
+        return hidden;
+    }
+
+    private static List<ItemStack> machines(int... ids) {
+        List<ItemStack> result = new ArrayList<>();
+        for (int id : ids) {
+            String name = id == 1 ? "gacha_machine" : "gacha_machine_" + id;
+            var machine = CobbledGacha.MACHINES.get(name);
+            if (machine != null) result.add(new ItemStack(machine.get()));
+        }
+        return result;
+    }
+
+    private static void addLootRecipes(List<MachineRewardRecipe> out, List<ItemStack> machines, List<ItemStack> currencies, int cost, JsonObject table) {
+        if (table == null || machines.isEmpty()) return;
         List<LootEntry> entries = entries(table);
         int total = entries.stream().mapToInt(LootEntry::weight).filter(w -> w > 0).sum();
         if (total <= 0) return;
@@ -117,7 +152,7 @@ public final class CobbledJeiData {
             if (e.weight <= 0) continue;
             Item reward = item(e.itemId);
             if (reward == null) continue;
-            out.add(new MachineRewardRecipe(machine.copy(), copy(currencies), new ItemStack(reward), 100.0F * e.weight / total, cost));
+            out.add(new MachineRewardRecipe(copy(machines), copy(currencies), new ItemStack(reward), 100.0F * e.weight / total, cost));
         }
     }
 
