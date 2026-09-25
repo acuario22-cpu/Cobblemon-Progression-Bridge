@@ -3,9 +3,11 @@ package com.hisroyalty.cobbledgacha.compat.jei;
 import com.hisroyalty.cobbledgacha.CobbledGacha;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -40,8 +42,17 @@ public class CobbledGachaJeiPlugin implements IModPlugin {
             registration.addRecipeCatalyst(new ItemStack(machine.get()),
                 i == 4 ? PokemonGachaCategory.TYPE : MachineRewardCategory.TYPE);
         }
-        for (var capsule : CobbledGacha.CAPSULES) {
-            registration.addRecipeCatalyst(new ItemStack(capsule.get()), CapsuleRewardCategory.TYPE);
+
+        for (int i = 0; i < Math.min(CobbledGacha.USEFUL_CAPSULE_COUNT, CobbledGacha.CAPSULES.size()); i++) {
+            registration.addRecipeCatalyst(new ItemStack(CobbledGacha.CAPSULES.get(i).get()), CapsuleRewardCategory.TYPE);
+        }
+    }
+
+    @Override
+    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
+        var hidden = CobbledJeiData.hiddenCapsules();
+        if (!hidden.isEmpty()) {
+            jeiRuntime.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, hidden);
         }
     }
 }
