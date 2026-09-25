@@ -19,7 +19,7 @@ public class MachineRewardCategory implements IRecipeCategory<MachineRewardRecip
     private final IDrawable background, icon;
 
     public MachineRewardCategory(IGuiHelper gui) {
-        background = gui.createBlankDrawable(170, 52);
+        background = gui.createBlankDrawable(176, 54);
         icon = gui.createDrawableIngredient(mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
             new ItemStack(CobbledGacha.MACHINES.get("gacha_machine").get()));
     }
@@ -31,15 +31,15 @@ public class MachineRewardCategory implements IRecipeCategory<MachineRewardRecip
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, MachineRewardRecipe recipe, IFocusGroup focuses) {
-        builder.addSlot(RecipeIngredientRole.CATALYST, 7, 20).addItemStack(recipe.machine());
-        builder.addSlot(RecipeIngredientRole.INPUT, 48, 20).addItemStacks(recipe.currencies());
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 140, 20).addItemStack(recipe.reward());
+        builder.addSlot(RecipeIngredientRole.CATALYST, 7, 20).addItemStacks(recipe.machines());
+        builder.addSlot(RecipeIngredientRole.INPUT, 52, 20).addItemStacks(recipe.currencies());
+        builder.addSlot(RecipeIngredientRole.OUTPUT, 146, 20).addItemStack(recipe.reward());
     }
 
     @Override
     public void draw(MachineRewardRecipe recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         var font = Minecraft.getInstance().font;
-        graphics.drawString(font, Component.literal(recipe.cost() + "x"), 70, 24, 0x404040, false);
-        graphics.drawString(font, Component.literal(String.format(java.util.Locale.ROOT, "%.2f%%", recipe.chance())), 94, 24, 0x404040, false);
+        graphics.drawString(font, Component.literal(recipe.cost() + "x"), 74, 24, 0x404040, false);
+        graphics.drawString(font, Component.literal(String.format(java.util.Locale.ROOT, "%.2f%%", recipe.chance())), 101, 24, 0x404040, false);
     }
 }
