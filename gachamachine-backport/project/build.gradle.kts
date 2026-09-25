@@ -17,11 +17,13 @@ loom {
 repositories {
     mavenCentral()
     maven("https://maven.minecraftforge.net/")
+    maven("https://maven.blamejared.com")
 }
 dependencies {
     minecraft("net.minecraft:minecraft:${property("minecraft_version")}")
     mappings(loom.officialMojangMappings())
     add("forge", "net.minecraftforge:forge:${property("minecraft_version")}-${property("forge_version")}")
+    modCompileOnly("mezz.jei:jei-1.20.1-forge-api:15.21.0.138")
 }
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(17))
