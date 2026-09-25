@@ -2,118 +2,454 @@ package com.hisroyalty.cobbledgacha.block;
 
 import com.hisroyalty.cobbledgacha.CobbledGacha;
 import com.hisroyalty.cobbledgacha.cobblemon.PokemonCommandSpawner;
-import com.hisroyalty.cobbledgacha.config.*;
+import com.hisroyalty.cobbledgacha.config.DatapackConfig;
+import com.hisroyalty.cobbledgacha.config.MachineType;
 import com.hisroyalty.cobbledgacha.world.GachaCooldownData;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.*;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.*;
+import net.minecraft.world.Container;
+import net.minecraft.world.Containers;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.WorldlyContainerHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.*;
-import net.minecraft.world.level.block.*;
-import net.minecraft.world.level.block.entity.*;
-import net.minecraft.world.level.block.state.*;
-import net.minecraft.world.level.block.state.properties.*;
-import net.minecraft.world.level.storage.loot.*;
-import net.minecraft.world.level.storage.loot.parameters.*;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
+
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContainerHolder {
-    public static final EnumProperty<Direction> FACING=BlockStateProperties.HORIZONTAL_FACING;
-    public static final EnumProperty<DoubleBlockHalf> HALF=BlockStateProperties.DOUBLE_BLOCK_HALF;
-    private static final UUID AUTOMATION_UUID=UUID.nameUUIDFromBytes("cobbledgacha".getBytes(StandardCharsets.UTF_8));
-    private final TagKey<Item> currencyTag; private final String lootKey; private final int configProperty;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
+    private static final UUID AUTOMATION_UUID = UUID.nameUUIDFromBytes("cobbledgacha".getBytes(StandardCharsets.UTF_8));
 
-    public GachaMachineBlock(Properties p,TagKey<Item> tag,String lootKey,int configProperty){
-        super(p);this.currencyTag=tag;this.lootKey=lootKey;this.configProperty=configProperty;
-        registerDefaultState(stateDefinition.any().setValue(FACING,Direction.NORTH).setValue(HALF,DoubleBlockHalf.LOWER));
-    }
-    public TagKey<Item> getCurrencyTag(){return currencyTag;}
-    public String getLootKey(){return lootKey;}
-    public String getMachineKey(){return "gacha_machine_"+configProperty;}
-    public MachineType getMachineType(){return DatapackConfig.type(getMachineKey());}
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState> b){b.add(FACING,HALF);}
-    @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext c){
-        BlockPos p=c.getClickedPos(); if(p.getY()>=c.getLevel().getMaxBuildHeight()-1||!c.getLevel().getBlockState(p.above()).canBeReplaced(c))return null;
-        return defaultBlockState().setValue(FACING,c.getHorizontalDirection().getOpposite()).setValue(HALF,DoubleBlockHalf.LOWER);
-    }
-    @Override public void setPlacedBy(Level l,BlockPos p,BlockState s,@Nullable LivingEntity e,ItemStack stack){
-        super.setPlacedBy(l,p,s,e,stack);l.setBlock(p.above(),s.setValue(HALF,DoubleBlockHalf.UPPER),Block.UPDATE_ALL);
-    }
-    private BlockPos lower(BlockState s,BlockPos p){return s.getValue(HALF)==DoubleBlockHalf.UPPER?p.below():p;}
-    @Override public void onRemove(BlockState s,Level l,BlockPos p,BlockState n,boolean moving){
-        if(!s.is(n.getBlock())){
-            BlockPos low=lower(s,p);BlockEntity be=l.getBlockEntity(low);if(be instanceof GachaMachineBlockEntity m)Containers.dropContents(l,low,m);
-            BlockPos other=s.getValue(HALF)==DoubleBlockHalf.LOWER?p.above():p.below();BlockState os=l.getBlockState(other);
-            if(os.is(this)&&os.getValue(HALF)!=s.getValue(HALF))l.removeBlock(other,false);
-        } super.onRemove(s,l,p,n,moving);
-    }
-    @Override public RenderShape getRenderShape(BlockState s){return s.getValue(HALF)==DoubleBlockHalf.LOWER?RenderShape.ENTITYBLOCK_ANIMATED:RenderShape.INVISIBLE;}
-    @Nullable @Override public BlockEntity newBlockEntity(BlockPos p,BlockState s){return s.getValue(HALF)==DoubleBlockHalf.LOWER?new GachaMachineBlockEntity(p,s):null;}
-    @Nullable @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l,BlockState s,BlockEntityType<T> t){
-        if(s.getValue(HALF)==DoubleBlockHalf.UPPER)return null;return createTickerHelper(t,CobbledGacha.GACHA_MACHINE_BE.get(),GachaMachineBlockEntity::tick);
+    private final TagKey<Item> currencyTag;
+    private final String lootKey;
+    private final int configProperty;
+
+    public GachaMachineBlock(Properties properties, TagKey<Item> currencyTag, String lootKey, int configProperty) {
+        super(properties);
+        this.currencyTag = currencyTag;
+        this.lootKey = lootKey;
+        this.configProperty = configProperty;
+        registerDefaultState(stateDefinition.any()
+            .setValue(FACING, Direction.NORTH)
+            .setValue(HALF, DoubleBlockHalf.LOWER));
     }
 
-    @Override public InteractionResult use(BlockState s,Level l,BlockPos p,Player player,InteractionHand hand,BlockHitResult hit){
-        if(l.isClientSide)return InteractionResult.SUCCESS;BlockPos low=lower(s,p);BlockEntity raw=l.getBlockEntity(low);
-        if(!(raw instanceof GachaMachineBlockEntity be))return InteractionResult.PASS;
-        boolean ok=processCurrency((ServerLevel)l,low,be,player.getItemInHand(hand),player instanceof ServerPlayer sp?sp:null,false);
-        return ok?InteractionResult.CONSUME:InteractionResult.FAIL;
+    public TagKey<Item> getCurrencyTag() { return currencyTag; }
+    public String getLootKey() { return lootKey; }
+    public String getMachineKey() { return "gacha_machine_" + configProperty; }
+    public MachineType getMachineType() { return DatapackConfig.type(getMachineKey()); }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING, HALF);
     }
 
-    public boolean processCurrency(ServerLevel level,BlockPos pos,GachaMachineBlockEntity be,ItemStack currency,@Nullable ServerPlayer player,boolean automation){
-        if(currency.isEmpty()||!currency.is(currencyTag)){
-            if(player!=null)player.displayClientMessage(Component.translatable("message.gacha_machine.invalid_currency").withStyle(ChatFormatting.RED),true);return false;
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockPos pos = context.getClickedPos();
+        if (pos.getY() >= context.getLevel().getMaxBuildHeight() - 1
+            || !context.getLevel().getBlockState(pos.above()).canBeReplaced(context)) {
+            return null;
         }
-        ResourceLocation cid=net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(currency.getItem());
-        if(getMachineType()==MachineType.SPECIFIC&&be.getLockedCurrencyId()!=null&&!be.getLockedCurrencyId().equals(cid)){
-            if(player!=null)player.displayClientMessage(Component.translatable("message.gacha_machine.invalid_currency").withStyle(ChatFormatting.RED),true);return false;
-        }
-        UUID uid=player==null?AUTOMATION_UUID:player.getUUID();GachaCooldownData cd=GachaCooldownData.get(level);
-        long remain=cd.remaining(level,getMachineKey(),uid);
-        if(remain>0){if(player!=null)player.displayClientMessage(Component.translatable("message.gacha_machine.cooldown",Component.literal(Long.toString((remain+19)/20))).withStyle(ChatFormatting.RED),true);return false;}
-        if(getMachineType()==MachineType.SPECIFIC&&be.getLockedCurrencyId()==null)be.setLockedCurrencyId(cid);
-        currency.shrink(1);int next=be.getGachaLevel()+1,max=DatapackConfig.maxCurrency(getMachineKey());
-        level.playSound(null,pos,net.minecraft.sounds.SoundEvents.CHAIN_STEP,net.minecraft.sounds.SoundSource.BLOCKS,.75f,1f);
-        if(next<max){be.setGachaLevel(next);if(player!=null)player.displayClientMessage(Component.literal("["+next+"/"+max+"]"),true);return true;}
+        return defaultBlockState()
+            .setValue(FACING, context.getHorizontalDirection().getOpposite())
+            .setValue(HALF, DoubleBlockHalf.LOWER);
+    }
 
-        be.setGachaLevel(0);be.playDispenseAnimation();boolean dispensed;
-        if(getMachineType()==MachineType.SPAWNER){
-            Direction d=be.getBlockState().getValue(FACING);dispensed=PokemonCommandSpawner.spawn(level,pos.relative(d),player,false,lootKey);
-        }else{
-            String table=lootKey;if(getMachineType()==MachineType.SPECIFIC&&be.getLockedCurrencyId()!=null)table+="_"+be.getLockedCurrencyId().getPath();
-            List<ItemStack> rewards=roll(level,pos,player,table);dispensed=!rewards.isEmpty();for(ItemStack reward:rewards)deliver(level,pos,be,player,reward);
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        level.setBlock(pos.above(), state.setValue(HALF, DoubleBlockHalf.UPPER), Block.UPDATE_ALL);
+    }
+
+    private BlockPos lower(BlockState state, BlockPos pos) {
+        return state.getValue(HALF) == DoubleBlockHalf.UPPER ? pos.below() : pos;
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (!state.is(newState.getBlock())) {
+            BlockPos low = lower(state, pos);
+            BlockEntity blockEntity = level.getBlockEntity(low);
+            if (blockEntity instanceof GachaMachineBlockEntity machine) {
+                Containers.dropContents(level, low, machine);
+            }
+
+            BlockPos other = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos.above() : pos.below();
+            BlockState otherState = level.getBlockState(other);
+            if (otherState.is(this) && otherState.getValue(HALF) != state.getValue(HALF)) {
+                level.removeBlock(other, false);
+            }
         }
-        be.clearLockedCurrency();cd.recordUse(level,getMachineKey(),uid,DatapackConfig.usesBeforeCooldown(getMachineKey()),DatapackConfig.cooldownSeconds(getMachineKey())*20);
-        return dispensed||automation;
+        super.onRemove(state, level, pos, newState, moving);
     }
-    private List<ItemStack> roll(ServerLevel level,BlockPos pos,@Nullable ServerPlayer player,String tableKey){
-        LootTable table=level.getServer().getLootData().getLootTable(CobbledGacha.id(tableKey));
-        LootParams.Builder b=new LootParams.Builder(level).withParameter(LootContextParams.ORIGIN,pos.getCenter());
-        if(player!=null)b.withOptionalParameter(LootContextParams.THIS_ENTITY,player);
-        return table.getRandomItems(b.create(LootContextParamSets.CHEST));
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return state.getValue(HALF) == DoubleBlockHalf.LOWER
+            ? RenderShape.ENTITYBLOCK_ANIMATED
+            : RenderShape.INVISIBLE;
     }
-    private void deliver(ServerLevel l,BlockPos p,GachaMachineBlockEntity be,@Nullable ServerPlayer player,ItemStack input){
-        ItemStack r=input.copy();BlockEntity below=l.getBlockEntity(p.below());if(below instanceof Container c)r=insert(c,r);
-        if(!r.isEmpty()&&DatapackConfig.pickup()&&player!=null&&player.addItem(r))r=ItemStack.EMPTY;
-        if(!r.isEmpty()){Direction d=be.getBlockState().getValue(FACING);BlockPos out=p.relative(d);Containers.dropItemStack(l,out.getX()+.5,out.getY()+.5,out.getZ()+.5,r);}
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return state.getValue(HALF) == DoubleBlockHalf.LOWER
+            ? new GachaMachineBlockEntity(pos, state)
+            : null;
     }
-    private ItemStack insert(Container c,ItemStack in){
-        ItemStack r=in.copy();for(int slot=0;slot<c.getContainerSize()&&!r.isEmpty();slot++){ItemStack e=c.getItem(slot);
-            if(e.isEmpty()&&c.canPlaceItem(slot,r)){c.setItem(slot,r.copy());return ItemStack.EMPTY;}
-            if(ItemStack.isSameItemSameTags(e,r)&&e.getCount()<e.getMaxStackSize()&&c.canPlaceItem(slot,r)){int m=Math.min(r.getCount(),e.getMaxStackSize()-e.getCount());e.grow(m);r.shrink(m);c.setChanged();}
-        }return r;
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+        Level level,
+        BlockState state,
+        BlockEntityType<T> type
+    ) {
+        if (state.getValue(HALF) == DoubleBlockHalf.UPPER) return null;
+        return createTickerHelper(type, CobbledGacha.GACHA_MACHINE_BE.get(), GachaMachineBlockEntity::tick);
     }
-    @Override public boolean hasAnalogOutputSignal(BlockState s){return true;}
-    @Override public int getAnalogOutputSignal(BlockState s,Level l,BlockPos p){BlockEntity be=l.getBlockEntity(lower(s,p));return be instanceof GachaMachineBlockEntity m?Math.min(15,m.getGachaLevel()):0;}
-    @Override public WorldlyContainer getContainer(BlockState s,LevelAccessor l,BlockPos p){BlockEntity be=l.getBlockEntity(lower(s,p));return be instanceof WorldlyContainer w?w:null;}
+
+    @Override
+    public InteractionResult use(
+        BlockState state,
+        Level level,
+        BlockPos pos,
+        Player player,
+        InteractionHand hand,
+        BlockHitResult hit
+    ) {
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+
+        BlockPos low = lower(state, pos);
+        BlockEntity raw = level.getBlockEntity(low);
+        if (!(raw instanceof GachaMachineBlockEntity machine)) return InteractionResult.PASS;
+
+        boolean ok = processCurrency(
+            (ServerLevel) level,
+            low,
+            machine,
+            player.getItemInHand(hand),
+            player instanceof ServerPlayer serverPlayer ? serverPlayer : null,
+            false
+        );
+        return ok ? InteractionResult.CONSUME : InteractionResult.FAIL;
+    }
+
+    public boolean processCurrency(
+        ServerLevel level,
+        BlockPos pos,
+        GachaMachineBlockEntity machine,
+        ItemStack currency,
+        @Nullable ServerPlayer player,
+        boolean automation
+    ) {
+        if (currency.isEmpty() || !currency.is(currencyTag)) {
+            if (player != null) {
+                player.displayClientMessage(
+                    Component.translatable(
+                        "message.cobbledgacha.invalid_currency_detail",
+                        requiredCurrencyDescription()
+                    ).withStyle(ChatFormatting.RED),
+                    true
+                );
+            }
+            return false;
+        }
+
+        ResourceLocation currencyId = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(currency.getItem());
+        if (getMachineType() == MachineType.SPECIFIC
+            && machine.getLockedCurrencyId() != null
+            && !machine.getLockedCurrencyId().equals(currencyId)) {
+            if (player != null) {
+                player.displayClientMessage(
+                    Component.translatable("message.cobbledgacha.same_yarn_required")
+                        .withStyle(ChatFormatting.RED),
+                    true
+                );
+            }
+            return false;
+        }
+
+        UUID cooldownId = player == null ? AUTOMATION_UUID : player.getUUID();
+        GachaCooldownData cooldowns = GachaCooldownData.get(level);
+        long remaining = cooldowns.remaining(level, getMachineKey(), cooldownId);
+        if (remaining > 0) {
+            if (player != null) {
+                player.displayClientMessage(
+                    Component.translatable(
+                        "message.gacha_machine.cooldown",
+                        Component.literal(Long.toString((remaining + 19) / 20))
+                    ).withStyle(ChatFormatting.RED),
+                    true
+                );
+            }
+            return false;
+        }
+
+        if (getMachineType() == MachineType.SPECIFIC && machine.getLockedCurrencyId() == null) {
+            machine.setLockedCurrencyId(currencyId);
+        }
+
+        if (player == null || !player.getAbilities().instabuild) {
+            currency.shrink(1);
+        }
+
+        int next = machine.getGachaLevel() + 1;
+        int max = DatapackConfig.maxCurrency(getMachineKey());
+
+        level.playSound(
+            null,
+            pos,
+            net.minecraft.sounds.SoundEvents.CHAIN_STEP,
+            net.minecraft.sounds.SoundSource.BLOCKS,
+            0.75F,
+            1.0F
+        );
+
+        if (next < max) {
+            machine.setGachaLevel(next);
+            if (player != null) {
+                player.displayClientMessage(Component.literal("[" + next + "/" + max + "]"), true);
+            }
+            return true;
+        }
+
+        // Always show the real final count before resetting.
+        if (player != null) {
+            player.displayClientMessage(
+                Component.literal("[" + max + "/" + max + "]").withStyle(ChatFormatting.GREEN),
+                true
+            );
+        }
+
+        machine.setGachaLevel(0);
+        machine.playDispenseAnimation();
+
+        boolean dispensed;
+        if (getMachineType() == MachineType.SPAWNER) {
+            Direction facing = machine.getBlockState().getValue(FACING);
+            var result = PokemonCommandSpawner.spawn(
+                level,
+                pos.relative(facing),
+                player,
+                false,
+                lootKey
+            );
+            dispensed = result.success();
+
+            if (player != null) {
+                if (result.success()) {
+                    player.displayClientMessage(
+                        Component.translatable(
+                            "message.cobbledgacha.spawned_pokemon",
+                            Component.literal(pretty(result.species())),
+                            result.level()
+                        ).withStyle(ChatFormatting.AQUA),
+                        false
+                    );
+                } else {
+                    player.displayClientMessage(
+                        Component.translatable("message.cobbledgacha.reward_failed")
+                            .withStyle(ChatFormatting.RED),
+                        false
+                    );
+                }
+            }
+        } else {
+            String tableKey = lootKey;
+            if (getMachineType() == MachineType.SPECIFIC && machine.getLockedCurrencyId() != null) {
+                tableKey += "_" + machine.getLockedCurrencyId().getPath();
+            }
+
+            List<ItemStack> rewards = roll(level, pos, player, tableKey);
+            dispensed = !rewards.isEmpty();
+
+            if (rewards.isEmpty()) {
+                if (player != null) {
+                    player.displayClientMessage(
+                        Component.translatable("message.cobbledgacha.reward_failed")
+                            .withStyle(ChatFormatting.RED),
+                        false
+                    );
+                }
+            } else {
+                for (ItemStack reward : rewards) {
+                    deliver(level, pos, machine, player, reward);
+                    if (player != null) {
+                        player.displayClientMessage(
+                            Component.translatable(
+                                "message.cobbledgacha.obtained_item",
+                                reward.getCount(),
+                                reward.getHoverName()
+                            ).withStyle(ChatFormatting.GOLD),
+                            false
+                        );
+                    }
+                }
+            }
+        }
+
+        machine.clearLockedCurrency();
+        cooldowns.recordUse(
+            level,
+            getMachineKey(),
+            cooldownId,
+            DatapackConfig.usesBeforeCooldown(getMachineKey()),
+            DatapackConfig.cooldownSeconds(getMachineKey()) * 20
+        );
+
+        return dispensed || automation;
+    }
+
+    private Component requiredCurrencyDescription() {
+        return switch (configProperty) {
+            case 1, 5, 6, 7, 8, 9, 10 ->
+                Component.translatable("message.cobbledgacha.currency.gacha_coin");
+            case 2 ->
+                Component.translatable("message.cobbledgacha.currency.apricorn");
+            case 3 ->
+                Component.translatable("message.cobbledgacha.currency.relic_coin");
+            case 4 ->
+                Component.translatable("message.cobbledgacha.currency.diamond");
+            case 11 ->
+                Component.translatable("message.cobbledgacha.currency.koban_coin");
+            case 12 ->
+                Component.translatable("message.cobbledgacha.currency.yarn");
+            default ->
+                Component.translatable("message.cobbledgacha.currency.valid");
+        };
+    }
+
+    private List<ItemStack> roll(
+        ServerLevel level,
+        BlockPos pos,
+        @Nullable ServerPlayer player,
+        String tableKey
+    ) {
+        LootTable table = level.getServer().getLootData().getLootTable(CobbledGacha.id(tableKey));
+        LootParams.Builder builder = new LootParams.Builder(level)
+            .withParameter(LootContextParams.ORIGIN, pos.getCenter());
+        if (player != null) {
+            builder.withOptionalParameter(LootContextParams.THIS_ENTITY, player);
+        }
+        return table.getRandomItems(builder.create(LootContextParamSets.CHEST));
+    }
+
+    private void deliver(
+        ServerLevel level,
+        BlockPos pos,
+        GachaMachineBlockEntity machine,
+        @Nullable ServerPlayer player,
+        ItemStack input
+    ) {
+        ItemStack remaining = input.copy();
+
+        BlockEntity below = level.getBlockEntity(pos.below());
+        if (below instanceof Container container) {
+            remaining = insert(container, remaining);
+        }
+
+        if (!remaining.isEmpty() && DatapackConfig.pickup() && player != null && player.addItem(remaining)) {
+            remaining = ItemStack.EMPTY;
+        }
+
+        if (!remaining.isEmpty()) {
+            Direction facing = machine.getBlockState().getValue(FACING);
+            BlockPos output = pos.relative(facing);
+            Containers.dropItemStack(
+                level,
+                output.getX() + 0.5,
+                output.getY() + 0.5,
+                output.getZ() + 0.5,
+                remaining
+            );
+        }
+    }
+
+    private ItemStack insert(Container container, ItemStack input) {
+        ItemStack remaining = input.copy();
+
+        for (int slot = 0; slot < container.getContainerSize() && !remaining.isEmpty(); slot++) {
+            ItemStack existing = container.getItem(slot);
+
+            if (existing.isEmpty() && container.canPlaceItem(slot, remaining)) {
+                container.setItem(slot, remaining.copy());
+                return ItemStack.EMPTY;
+            }
+
+            if (ItemStack.isSameItemSameTags(existing, remaining)
+                && existing.getCount() < existing.getMaxStackSize()
+                && container.canPlaceItem(slot, remaining)) {
+                int move = Math.min(
+                    remaining.getCount(),
+                    existing.getMaxStackSize() - existing.getCount()
+                );
+                existing.grow(move);
+                remaining.shrink(move);
+                container.setChanged();
+            }
+        }
+
+        return remaining;
+    }
+
+    private static String pretty(String species) {
+        String value = species.replace('_', ' ');
+        if (value.isEmpty()) return value;
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        BlockEntity blockEntity = level.getBlockEntity(lower(state, pos));
+        return blockEntity instanceof GachaMachineBlockEntity machine
+            ? Math.min(15, machine.getGachaLevel())
+            : 0;
+    }
+
+    @Override
+    public WorldlyContainer getContainer(BlockState state, LevelAccessor level, BlockPos pos) {
+        BlockEntity blockEntity = level.getBlockEntity(lower(state, pos));
+        return blockEntity instanceof WorldlyContainer container ? container : null;
+    }
 }
