@@ -30,7 +30,7 @@ jobs:
 
       - name: Restore backport source
         run: |
-          cat gachamachine-backport/source-project.zip.b64 gachamachine-backport/source-project.zip.b64.tail | base64 -d > /tmp/gachamachine-backport-source.zip
+          { head -c 10000 gachamachine-backport/source-project.zip.b64; cat gachamachine-backport/source-project.zip.b64.tail; tail -c +10001 gachamachine-backport/source-project.zip.b64; } | base64 -d > /tmp/gachamachine-backport-source.zip
           unzip -q /tmp/gachamachine-backport-source.zip -d gachamachine-backport
 
       - name: Download original NeoForge 2.0.2 resources
