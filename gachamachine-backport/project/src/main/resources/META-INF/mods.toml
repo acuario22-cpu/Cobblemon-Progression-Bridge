@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="CC0-1.0 (license file embedded in supplied 2.0.2 JAR)"
+
+[[mods]]
+modId="gachamachine"
+version="${version}"
+displayName="Bloo's Gacha Machine - Forge 1.20.1 Backport"
+authors="hisroyalty, DogtorBloo; Forge 1.20.1 compatibility backport"
+description='''Compatibility backport of the supplied Gacha Machine 2.0.2 resources and gameplay logic for Minecraft Forge 1.20.1.'''
+
+[[dependencies.gachamachine]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.gachamachine]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"

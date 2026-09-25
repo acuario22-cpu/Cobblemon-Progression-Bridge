@@ -1,0 +1,82 @@
+name: Build GachaMachine Forge 1.20.1
+on:
+  push:
+    branches: [ "gachamachine-forge-1.20.1" ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 8.1.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.1.1"
+
+      - name: Extract original 2.0.2 assets and migrate them to 1.20.1
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="gachamachine-backport/project"
+          TMP="$(mktemp -d)"
+          VERSION_JSON="$TMP/version.json"
+          curl -fsSL "https://api.modrinth.com/v2/version/Lv0KCHQY" -o "$VERSION_JSON"
+          URL="$(jq -r '.files[] | select(.primary == true) | .url' "$VERSION_JSON" | head -n1)"
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            URL="$(jq -r '.files[0].url' "$VERSION_JSON")"
+          fi
+          curl -fsSL "$URL" -o "$TMP/original.jar"
+          mkdir -p "$TMP/original"
+          (cd "$TMP/original" && jar xf "$TMP/original.jar")
+
+          rm -rf "$PROJECT/src/main/resources/assets/gachamachine"
+          rm -rf "$PROJECT/src/main/resources/data/gachamachine"
+          mkdir -p "$PROJECT/src/main/resources/assets" "$PROJECT/src/main/resources/data/gachamachine"
+
+          cp -a "$TMP/original/assets/gachamachine" "$PROJECT/src/main/resources/assets/"
+          cp -a "$TMP/original/data/gachamachine/loot_table" "$PROJECT/src/main/resources/data/gachamachine/loot_tables"
+          cp -a "$TMP/original/data/gachamachine/recipe" "$PROJECT/src/main/resources/data/gachamachine/recipes"
+          mkdir -p "$PROJECT/src/main/resources/data/gachamachine/tags"
+          cp -a "$TMP/original/data/gachamachine/tags/item" "$PROJECT/src/main/resources/data/gachamachine/tags/items"
+
+          # Minecraft 1.20.1 recipe result uses "item" instead of the 1.21.1 "id".
+          python3 - <<'PY'
+          import json, pathlib
+          root = pathlib.Path("gachamachine-backport/project/src/main/resources/data/gachamachine/recipes")
+          for path in root.glob("*.json"):
+              data = json.loads(path.read_text())
+              result = data.get("result")
+              if isinstance(result, dict) and "id" in result and "item" not in result:
+                  result["item"] = result.pop("id")
+              path.write_text(json.dumps(data, indent=2) + "\n")
+          PY
+
+          # The custom 1.21 loot context id is not registered in 1.20.1.
+          find "$PROJECT/src/main/resources/data/gachamachine/loot_tables" -name '*.json' -print0 |
+            xargs -0 sed -i 's/"type"[[:space:]]*:[[:space:]]*"gachamachine:gacha_machine"/"type": "minecraft:generic"/g'
+
+          if [ -f "$TMP/original/LICENSE_Bloo's Gacha Machine" ]; then
+            cp "$TMP/original/LICENSE_Bloo's Gacha Machine" "$PROJECT/LICENSE_ORIGINAL_CC0.txt"
+          fi
+
+      - name: Build
+        working-directory: gachamachine-backport/project
+        run: gradle build --stacktrace
+
+      - name: Upload JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GachaMachine-Forge-1.20.1-2.0.2-backport
+          path: |
+            gachamachine-backport/project/build/libs/GachaMachine-Forge-1.20.1-2.0.2-backport.1.jar
+          if-no-files-found: error
