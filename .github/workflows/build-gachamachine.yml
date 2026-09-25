@@ -127,5 +127,5 @@ jobs:
         with:
           name: GachaMachine-Forge-1.20.1-2.0.2-backport
           path: |
-            gachamachine-backport/project/build/libs/GachaMachine-Forge-1.20.1-2.0.2-backport.1.jar
+            gachamachine-backport/project/build/libs/GachaMachine-Forge-1.20.1-2.0.2-backport.2.jar
           if-no-files-found: error
