@@ -77,14 +77,11 @@ jobs:
               except Exception:
                   pass
 
-          # The original 2.0.2 data accidentally points every coloured machine at the base coin.
-          # Correct each machine to its matching colour; machine 9/10 are Black/White while coin 9/10 are White/Black.
-          coin_for_machine = {1:"gacha_coin", 2:"gacha_coin_2", 3:"gacha_coin_3", 4:"gacha_coin_4",
-                              5:"gacha_coin_5", 6:"gacha_coin_6", 7:"gacha_coin_7", 8:"gacha_coin_8",
-                              9:"gacha_coin_10", 10:"gacha_coin_9"}
-          for i, coin in coin_for_machine.items():
+          # All ten coloured coins are universal because all ten machines share the same reward pool.
+          all_coins = ["gachamachine:gacha_coin"] + [f"gachamachine:gacha_coin_{i}" for i in range(2, 11)]
+          for i in range(1, 11):
               name = "currency_items.json" if i == 1 else f"currency_items_{i}.json"
-              (tags / name).write_text(json.dumps({"values":[f"gachamachine:{coin}"]}, indent=2) + "\n")
+              (tags / name).write_text(json.dumps({"values":all_coins}, indent=2) + "\n")
 
           # The original blockstates did not expose the FACING property, so every machine faced north.
           blockstates = assets / "blockstates"
@@ -110,6 +107,8 @@ jobs:
               data = json.loads(path.read_text())
               data["jei.gachamachine.gacha_rewards"] = title1
               data["jei.gachamachine.capsule_rewards"] = title2
+              data["jei.gachamachine.any_machine"] = "Any color / any Gacha Coin" if lang_name == "en_us.json" else "Cualquier color / cualquier Moneda Gacha"
+              data["message.gacha_machine.invalid_any_currency"] = "You need any Gacha Coin." if lang_name == "en_us.json" else "Necesitas cualquier Moneda Gacha."
               path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
           PY
 
@@ -127,5 +126,5 @@ jobs:
         with:
           name: GachaMachine-Forge-1.20.1-2.0.2-backport
           path: |
-            gachamachine-backport/project/build/libs/GachaMachine-Forge-1.20.1-2.0.2-backport.2.jar
+            gachamachine-backport/project/build/libs/GachaMachine-Forge-1.20.1-2.0.2-backport.3.jar
           if-no-files-found: error
