@@ -5,6 +5,7 @@ import com.hisroyalty.gachamachine.GachaMachine;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.io.InputStream;
@@ -17,13 +18,35 @@ public final class GachaJeiData {
 
     public static List<GachaRewardRecipe> machineRewards() {
         List<GachaRewardRecipe> recipes = new ArrayList<>();
-        for (int i = 1; i <= 10; i++) {
-            String machineName = i == 1 ? "gacha_machine" : "gacha_machine_" + i;
-            Item machineItem = item("gachamachine:" + machineName);
-            Item currencyItem = item("gachamachine:" + GachaMachine.expectedCoinForMachine(i));
-            if (machineItem == null || currencyItem == null) continue;
+        List<ItemStack> machines = GachaMachine.MACHINES.values().stream().map(v -> new ItemStack(v.get())).toList();
+        List<ItemStack> currencies = GachaMachine.COINS.values().stream().map(v -> new ItemStack(v.get())).toList();
 
-            JsonObject table = read("/data/gachamachine/loot_tables/" + machineName + ".json");
+        JsonObject table = read("/data/gachamachine/loot_tables/gacha_machine.json");
+        if (table == null) return recipes;
+        List<Entry> entries = entries(table);
+        int total = entries.stream().mapToInt(Entry::weight).filter(w -> w > 0).sum();
+        if (total <= 0) return recipes;
+
+        for (Entry entry : entries) {
+            if (entry.weight <= 0) continue;
+            Item reward = item(entry.itemId);
+            if (reward == null) continue;
+            recipes.add(new GachaRewardRecipe(
+                copy(machines),
+                copy(currencies),
+                new ItemStack(reward),
+                100.0F * entry.weight / total));
+        }
+        return recipes;
+    }
+
+    public static List<CapsuleRewardRecipe> capsuleRewards() {
+        List<CapsuleRewardRecipe> recipes = new ArrayList<>();
+        for (String capsuleName : GachaMachine.USEFUL_CAPSULES) {
+            Item capsule = item("gachamachine:" + capsuleName);
+            if (capsule == null) continue;
+
+            JsonObject table = read("/data/gachamachine/loot_tables/gacha_capsules/" + capsuleName + ".json");
             if (table == null) continue;
             List<Entry> entries = entries(table);
             int total = entries.stream().mapToInt(Entry::weight).filter(w -> w > 0).sum();
@@ -33,9 +56,8 @@ public final class GachaJeiData {
                 if (entry.weight <= 0) continue;
                 Item reward = item(entry.itemId);
                 if (reward == null) continue;
-                recipes.add(new GachaRewardRecipe(
-                    new ItemStack(machineItem),
-                    new ItemStack(currencyItem),
+                recipes.add(new CapsuleRewardRecipe(
+                    new ItemStack(capsule),
                     new ItemStack(reward),
                     100.0F * entry.weight / total));
             }
@@ -43,32 +65,14 @@ public final class GachaJeiData {
         return recipes;
     }
 
-    public static List<CapsuleRewardRecipe> capsuleRewards() {
-        List<CapsuleRewardRecipe> recipes = new ArrayList<>();
-        for (char row = 'a'; row <= 'j'; row++) {
-            for (int col = 1; col <= 10; col++) {
-                String capsuleName = "capsule_" + row + col;
-                Item capsule = item("gachamachine:" + capsuleName);
-                if (capsule == null) continue;
-
-                JsonObject table = read("/data/gachamachine/loot_tables/gacha_capsules/" + capsuleName + ".json");
-                if (table == null) continue;
-                List<Entry> entries = entries(table);
-                int total = entries.stream().mapToInt(Entry::weight).filter(w -> w > 0).sum();
-                if (total <= 0) continue;
-
-                for (Entry entry : entries) {
-                    if (entry.weight <= 0) continue;
-                    Item reward = item(entry.itemId);
-                    if (reward == null) continue;
-                    recipes.add(new CapsuleRewardRecipe(
-                        new ItemStack(capsule),
-                        new ItemStack(reward),
-                        100.0F * entry.weight / total));
-                }
+    public static List<ItemStack> hiddenCapsules() {
+        List<ItemStack> hidden = new ArrayList<>();
+        for (var entry : GachaMachine.CAPSULES.entrySet()) {
+            if (!GachaMachine.USEFUL_CAPSULES.contains(entry.getKey())) {
+                hidden.add(new ItemStack(entry.getValue().get()));
             }
         }
-        return recipes;
+        return hidden;
     }
 
     private static JsonObject read(String path) {
@@ -103,10 +107,16 @@ public final class GachaJeiData {
     private static Item item(String id) {
         try {
             Item value = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
-            return value == null || value == net.minecraft.world.item.Items.AIR ? null : value;
+            return value == null || value == Items.AIR ? null : value;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private static List<ItemStack> copy(List<ItemStack> stacks) {
+        List<ItemStack> out = new ArrayList<>(stacks.size());
+        stacks.forEach(s -> out.add(s.copy()));
+        return out;
     }
 
     private record Entry(String itemId, int weight) {}
