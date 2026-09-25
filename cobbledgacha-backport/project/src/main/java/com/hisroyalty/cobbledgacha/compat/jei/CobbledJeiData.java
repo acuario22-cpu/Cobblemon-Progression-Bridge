@@ -86,15 +86,17 @@ public final class CobbledJeiData {
             for (LootEntry entry : entries) {
                 if (entry.weight <= 0) continue;
                 Item doll = item(entry.itemId);
-                if (doll == null) continue;
+                boolean available = doll != null;
 
                 ItemStack yarnStack = new ItemStack(yarn, 3);
                 out.add(new PlushRecipe(
                     new ItemStack(machine),
                     yarnStack,
-                    new ItemStack(doll),
+                    available ? new ItemStack(doll) : ItemStack.EMPTY,
+                    dollDisplayName(entry.itemId),
                     dollVariant(entry.itemId),
-                    100.0F * entry.weight / total
+                    100.0F * entry.weight / total,
+                    available
                 ));
             }
         }
@@ -282,6 +284,30 @@ public final class CobbledJeiData {
         );
 
         return lines;
+    }
+
+    private static String dollDisplayName(String itemId) {
+        String path = itemId.contains(":")
+            ? itemId.substring(itemId.indexOf(':') + 1)
+            : itemId;
+
+        path = path
+            .replace("gigantic_pokedoll_shiny_", "")
+            .replace("gigantic_pokedoll_", "")
+            .replace("pokedoll_shiny_", "")
+            .replace("pokedoll_", "")
+            .replace('_', ' ');
+
+        if (path.isEmpty()) return itemId;
+
+        String[] words = path.split(" ");
+        StringBuilder result = new StringBuilder();
+        for (String word : words) {
+            if (word.isEmpty()) continue;
+            if (!result.isEmpty()) result.append(' ');
+            result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return result.toString();
     }
 
     private static String dollVariant(String itemId) {
