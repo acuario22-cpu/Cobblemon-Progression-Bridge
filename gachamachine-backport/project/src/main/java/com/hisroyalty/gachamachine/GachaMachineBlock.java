@@ -49,13 +49,11 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
 
     private final TagKey<Item> currencyTag;
     private final String lootKey;
-    private final String expectedCoinName;
 
     public GachaMachineBlock(Properties properties, TagKey<Item> currencyTag, String lootKey) {
         super(properties);
         this.currencyTag = currencyTag;
         this.lootKey = lootKey;
-        this.expectedCoinName = expectedCoinName;
         registerDefaultState(stateDefinition.any()
             .setValue(FACING, Direction.NORTH)
             .setValue(HALF, DoubleBlockHalf.LOWER));
@@ -63,7 +61,6 @@ public class GachaMachineBlock extends BaseEntityBlock implements WorldlyContain
 
     public TagKey<Item> getCurrencyTag() { return currencyTag; }
     public String getLootKey() { return lootKey; }
-    public String getExpectedCoinName() { return expectedCoinName; }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
