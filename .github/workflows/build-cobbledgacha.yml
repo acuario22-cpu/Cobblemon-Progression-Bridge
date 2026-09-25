@@ -230,7 +230,10 @@ jobs:
                   "message.cobbledgacha.spawned_pokemon": "Appeared: %s Lv.%s",
                   "message.cobbledgacha.received_pokemon": "Received Pokémon: %s Lv.%s",
                   "message.cobbledgacha.reward_failed": "The machine could not generate a reward.",
-                  "message.cobbledgacha.pokemon_failed": "No Pokémon could be generated."
+                  "message.cobbledgacha.pokemon_failed": "No Pokémon could be generated.",
+                  "message.cobbledgacha.no_valid_rewards": "No compatible rewards from this pool are installed.",
+                  "message.cobbledgacha.plush_dependency_missing": "Plush-O-Matic needs Pokeblocks rewards, but Pokeblocks is not loaded.",
+                  "jei.cobbledgacha.pokeblocks_missing": "Pokeblocks not installed"
               },
               "es_es.json": {
                   "jei.cobbledgacha.machine_rewards": "Premios de Cobbled Gacha",
@@ -258,7 +261,10 @@ jobs:
                   "message.cobbledgacha.spawned_pokemon": "Apareció: %s Nv.%s",
                   "message.cobbledgacha.received_pokemon": "Recibiste Pokémon: %s Nv.%s",
                   "message.cobbledgacha.reward_failed": "La máquina no pudo generar una recompensa.",
-                  "message.cobbledgacha.pokemon_failed": "No se pudo generar ningún Pokémon."
+                  "message.cobbledgacha.pokemon_failed": "No se pudo generar ningún Pokémon.",
+                  "message.cobbledgacha.no_valid_rewards": "No hay recompensas compatibles instaladas para este pool.",
+                  "message.cobbledgacha.plush_dependency_missing": "Plush-O-Matic necesita las recompensas de Pokeblocks, pero Pokeblocks no está cargado.",
+                  "jei.cobbledgacha.pokeblocks_missing": "Pokeblocks no está instalado"
               }
           }
 
@@ -285,5 +291,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CobbledGacha-Forge-1.20.1-3.0.3-backport
-          path: cobbledgacha-backport/project/build/libs/CobbledGacha-Forge-1.20.1-3.0.3-backport.5.jar
+          path: cobbledgacha-backport/project/build/libs/CobbledGacha-Forge-1.20.1-3.0.3-backport.6.jar
           if-no-files-found: error
