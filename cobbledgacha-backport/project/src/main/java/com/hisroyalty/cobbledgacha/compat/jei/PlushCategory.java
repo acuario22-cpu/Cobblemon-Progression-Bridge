@@ -9,6 +9,7 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -22,7 +23,7 @@ public class PlushCategory implements IRecipeCategory<PlushRecipe> {
     private final IDrawable icon;
 
     public PlushCategory(IGuiHelper gui) {
-        background = gui.createBlankDrawable(188, 62);
+        background = gui.createBlankDrawable(210, 72);
         icon = gui.createDrawableIngredient(
             mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
             new ItemStack(CobbledGacha.MACHINES.get("gacha_machine_12").get())
@@ -36,18 +37,55 @@ public class PlushCategory implements IRecipeCategory<PlushRecipe> {
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, PlushRecipe recipe, IFocusGroup focuses) {
-        builder.addSlot(RecipeIngredientRole.CATALYST, 8, 22).addItemStack(recipe.machine());
-        builder.addSlot(RecipeIngredientRole.INPUT, 55, 22).addItemStack(recipe.yarn());
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 157, 22).addItemStack(recipe.doll());
+        builder.addSlot(RecipeIngredientRole.CATALYST, 8, 24).addItemStack(recipe.machine());
+        builder.addSlot(RecipeIngredientRole.INPUT, 56, 24).addItemStack(recipe.yarn());
+        if (!recipe.doll().isEmpty()) {
+            builder.addSlot(RecipeIngredientRole.OUTPUT, 178, 24).addItemStack(recipe.doll());
+        }
     }
 
     @Override
     public void draw(PlushRecipe recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         var font = Minecraft.getInstance().font;
-        graphics.drawString(font, Component.literal("3x"), 77, 26, 0x404040, false);
-        graphics.drawString(font, Component.translatable("jei.cobbledgacha.plush_variant", Component.translatable(recipe.variant())), 95, 10, 0x303030, false);
-        graphics.drawString(font,
+        graphics.drawString(font, Component.literal("3x"), 78, 28, 0x404040, false);
+
+        graphics.drawString(
+            font,
+            Component.literal(recipe.dollName()),
+            104,
+            8,
+            recipe.available() ? 0x303030 : 0xAA2222,
+            false
+        );
+
+        graphics.drawString(
+            font,
+            Component.translatable("jei.cobbledgacha.plush_variant", Component.translatable(recipe.variant())),
+            104,
+            21,
+            0x404040,
+            false
+        );
+
+        graphics.drawString(
+            font,
             Component.literal(String.format(java.util.Locale.ROOT, "%.2f%%", recipe.chance())),
-            105, 30, 0x404040, false);
+            104,
+            34,
+            0x404040,
+            false
+        );
+
+        if (!recipe.available()) {
+            graphics.drawString(
+                font,
+                Component.translatable("jei.cobbledgacha.pokeblocks_missing")
+                    .withStyle(ChatFormatting.RED),
+                104,
+                49,
+                0xAA2222,
+                false
+            );
+        }
     }
 }
