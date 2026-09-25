@@ -1,7 +1,7 @@
 package com.hisroyalty.cobbledgacha;
 
 import com.hisroyalty.cobbledgacha.block.*;
-import com.hisroyalty.cobbledgacha.client.GachaMachineRenderer;
+import com.hisroyalty.cobbledgacha.client.GachaMachineRenderer;\nimport net.minecraft.client.renderer.ItemBlockRenderTypes;\nimport net.minecraft.client.renderer.RenderType;
 import com.hisroyalty.cobbledgacha.cobblemon.GachaSpawnPools;
 import com.hisroyalty.cobbledgacha.item.*;
 import net.minecraft.core.registries.Registries;
@@ -17,7 +17,7 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.eventbus.api.*;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod;\nimport net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.*;
 import java.util.*;
@@ -32,7 +32,7 @@ public class CobbledGacha {
     public static final Map<String,RegistryObject<GachaMachineBlock>> MACHINES=new LinkedHashMap<>();
     public static final Map<String,RegistryObject<Item>> COINS=new LinkedHashMap<>();
     public static final Map<String,RegistryObject<Item>> EXTRA_ITEMS=new LinkedHashMap<>();
-    public static final List<RegistryObject<Item>> CAPSULES=new ArrayList<>();
+    public static final List<RegistryObject<Item>> CAPSULES=new ArrayList<>();\n    public static final int USEFUL_CAPSULE_COUNT=5;
     public static final RegistryObject<BlockEntityType<GachaMachineBlockEntity>> GACHA_MACHINE_BE;
 
     static {
@@ -41,7 +41,7 @@ public class CobbledGacha {
             RegistryObject<GachaMachineBlock> block=BLOCKS.register(name,()->new GachaMachineBlock(
                 BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(.5f).noOcclusion().lightLevel(s->tier==4?12:0),
                 TagKey.create(Registries.ITEM,id(tag)),name,tier));
-            MACHINES.put(name,block);ITEMS.register(name,()->new BlockItem(block.get(),new Item.Properties()));
+            MACHINES.put(name,block);ITEMS.register(name,()->new GeoMachineBlockItem(block.get(),new Item.Properties()));
         }
         for(int i=1;i<=10;i++){String n=i==1?"gacha_coin":"gacha_coin_"+i;COINS.put(n,ITEMS.register(n,()->new Item(new Item.Properties())));}
         EXTRA_ITEMS.put("koban_coin",ITEMS.register("koban_coin",()->new KobanCoinItem(new Item.Properties())));
@@ -55,7 +55,7 @@ public class CobbledGacha {
         TABS.register("cobbled_gacha",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.cobbled_gacha"))
             .icon(()->new ItemStack(MACHINES.get("gacha_machine").get())).displayItems((params,out)->{
                 MACHINES.values().forEach(v->out.accept(v.get()));COINS.values().forEach(v->out.accept(v.get()));
-                EXTRA_ITEMS.values().forEach(v->out.accept(v.get()));CAPSULES.forEach(v->out.accept(v.get()));
+                EXTRA_ITEMS.values().forEach(v->out.accept(v.get()));\n                for(int i=0;i<Math.min(USEFUL_CAPSULE_COUNT,CAPSULES.size());i++)out.accept(CAPSULES.get(i).get());
             }).build());
     }
 
