@@ -12,12 +12,14 @@ repositories {
     mavenCentral()
     maven("https://maven.minecraftforge.net/")
     maven("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/")
+    maven("https://maven.blamejared.com")
 }
 dependencies {
     minecraft("net.minecraft:minecraft:${property("minecraft_version")}")
     mappings(loom.officialMojangMappings())
     add("forge", "net.minecraftforge:forge:${property("minecraft_version")}-${property("forge_version")}")
     modImplementation("software.bernie.geckolib:geckolib-forge-1.20.1:4.4.9")
+    modCompileOnly("mezz.jei:jei-1.20.1-forge-api:15.21.0.138")
 }
 java { toolchain.languageVersion.set(JavaLanguageVersion.of(17)); withSourcesJar() }
 tasks.processResources {
