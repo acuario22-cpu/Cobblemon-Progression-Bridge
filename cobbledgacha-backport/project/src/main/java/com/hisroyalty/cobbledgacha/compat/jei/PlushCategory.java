@@ -45,7 +45,7 @@ public class PlushCategory implements IRecipeCategory<PlushRecipe> {
     public void draw(PlushRecipe recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         var font = Minecraft.getInstance().font;
         graphics.drawString(font, Component.literal("3x"), 77, 26, 0x404040, false);
-        graphics.drawString(font, Component.translatable("jei.cobbledgacha.plush_variant", recipe.variant()), 95, 10, 0x303030, false);
+        graphics.drawString(font, Component.translatable("jei.cobbledgacha.plush_variant", Component.translatable(recipe.variant())), 95, 10, 0x303030, false);
         graphics.drawString(font,
             Component.literal(String.format(java.util.Locale.ROOT, "%.2f%%", recipe.chance())),
             105, 30, 0x404040, false);
