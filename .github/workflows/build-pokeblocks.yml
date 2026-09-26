@@ -191,5 +191,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Pokeblocks-Forge-1.20.1-1.4.0-backport
-          path: pokeblocks-backport/project/build/libs/Pokeblocks-Forge-1.20.1-1.4.0-forge-backport.1.jar
+          path: pokeblocks-backport/project/build/libs/Pokeblocks-Forge-1.20.1-1.4.0-forge-backport.2.jar
           if-no-files-found: error
