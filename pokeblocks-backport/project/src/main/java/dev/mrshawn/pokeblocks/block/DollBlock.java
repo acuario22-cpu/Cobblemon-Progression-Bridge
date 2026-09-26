@@ -61,8 +61,11 @@ public class DollBlock extends BaseEntityBlock {
         BlockPos pos,
         CollisionContext context
     ) {
+        // Gigantic dolls are rendered at exactly 2x scale around the block centre.
+        // Keep the selection/collision volume aligned with that visual size instead
+        // of leaving them with the normal one-block hitbox.
         return gigantic
-            ? box(1, 0, 1, 15, 16, 15)
+            ? box(-8, 0, -8, 24, 32, 24)
             : box(3, 0, 3, 13, 11, 13);
     }
 
