@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.mrshawn.pokeblocks.block.DollBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 public class DollBlockRenderer extends GeoBlockRenderer<DollBlockEntity> {
@@ -15,7 +16,7 @@ public class DollBlockRenderer extends GeoBlockRenderer<DollBlockEntity> {
 
     @Override
     public void render(
-        DollBlockEntity animatable,
+        BlockEntity blockEntity,
         float partialTick,
         PoseStack poseStack,
         MultiBufferSource bufferSource,
@@ -24,9 +25,9 @@ public class DollBlockRenderer extends GeoBlockRenderer<DollBlockEntity> {
     ) {
         poseStack.pushPose();
 
-        if (animatable.gigantic()) {
-            // Scale around the horizontal centre of the placed block while keeping
-            // the doll's feet on the same Y=0 floor as the normal PokéDoll.
+        if (blockEntity instanceof DollBlockEntity doll && doll.gigantic()) {
+            // Keep the feet fixed to the floor and scale around the centre of
+            // the placement block, matching the original Gigantic 2x renderer.
             poseStack.translate(0.5D, 0.0D, 0.5D);
             poseStack.scale(
                 GIGANTIC_WORLD_SCALE,
@@ -37,7 +38,7 @@ public class DollBlockRenderer extends GeoBlockRenderer<DollBlockEntity> {
         }
 
         super.render(
-            animatable,
+            blockEntity,
             partialTick,
             poseStack,
             bufferSource,
