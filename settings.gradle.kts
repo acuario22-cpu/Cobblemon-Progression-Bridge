@@ -6,4 +6,4 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-rootProject.name = "Cobblemon-Progression-Bridge"
+rootProject.name = "Container-Sorter-Plus-1.20.1"
