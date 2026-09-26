@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="container_sorter_plus"
+version="${version}"
+displayName="Container Sorter Plus"
+description='''
+Adds safe sorting buttons to storage containers:
+A-Z, MOD, and TIPO -> MOD -> A-Z.
+Designed for Minecraft 1.20.1 Forge.
+'''
+
+[[dependencies.container_sorter_plus]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.22,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.container_sorter_plus]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
