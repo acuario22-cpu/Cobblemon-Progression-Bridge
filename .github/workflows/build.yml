@@ -1,10 +1,13 @@
-name: Build Forge 1.20.1 mod
+name: Build Container Sorter Plus Forge 1.20.1
+
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "container-sorter-forge-1.20.1" ]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,6 +28,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Cobblemon-Progression-Bridge-1.20.1
-          path: build/libs/*.jar
+          name: Container-Sorter-Plus-1.20.1-1.0.0
+          path: build/libs/Container-Sorter-Plus-1.20.1-1.0.0.jar
           if-no-files-found: error
