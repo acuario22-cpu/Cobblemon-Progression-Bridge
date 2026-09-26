@@ -1,0 +1,31 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="village_pokecenter_guarantee"
+version="${version}"
+displayName="Village PokeCenter Guarantee"
+displayTest="IGNORE_ALL_VERSION"
+description='''Guarantees a Generations PokéCenter attempt in every newly generated Plains or Desert village. PokéMart remains optional at 50%.'''
+
+[[dependencies.village_pokecenter_guarantee]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.22,48)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.village_pokecenter_guarantee]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.village_pokecenter_guarantee]]
+modId="generations_structures"
+mandatory=true
+versionRange="[1.0.0,2.0.0)"
+ordering="AFTER"
+side="BOTH"
