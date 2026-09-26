@@ -28,6 +28,10 @@ public class DollBlockItem extends BlockItem implements GeoItem {
         return dollId;
     }
 
+    public boolean gigantic() {
+        return dollId.startsWith("gigantic_");
+    }
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "static", 0, state -> PlayState.STOP));
