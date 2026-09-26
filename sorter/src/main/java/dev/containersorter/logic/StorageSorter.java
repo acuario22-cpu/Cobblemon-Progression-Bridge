@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.GenericContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ShulkerBoxMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.*;
@@ -21,7 +21,7 @@ public final class StorageSorter {
 
     public static boolean isSupported(AbstractContainerMenu menu, Inventory playerInventory) {
         String menuName = menu.getClass().getName().toLowerCase(Locale.ROOT);
-        boolean knownStorage = menu instanceof GenericContainerMenu
+        boolean knownStorage = menu instanceof ChestMenu
                 || menu instanceof ShulkerBoxMenu
                 || menuName.contains("chest");
 
